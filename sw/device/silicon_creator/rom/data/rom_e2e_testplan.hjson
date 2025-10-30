@@ -6,7 +6,7 @@
   name: "rom_e2e"
 
   testpoints: [
-    {
+	     {
       name: rom_e2e_smoke
       desc: '''Verify that ROM can boot a ROM_EXT with default infrastructure configurations.
 

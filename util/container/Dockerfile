@@ -65,6 +65,11 @@ RUN sed -i -e '/^$/d' -e '/^#/d' -e 's/#.*//' /tmp/apt-requirements.txt \
 
 # RISC-V device toolchain
 COPY util/get-toolchain.py /tmp/get-toolchain.py
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3 python3-venv python3-distutils ca-certificates curl xz-utils git \
+ && rm -rf /var/lib/apt/lists/*
+
+ARG RISCV_TOOLCHAIN_TAR_VERSION=20220210-1
 RUN /tmp/get-toolchain.py -r ${RISCV_TOOLCHAIN_TAR_VERSION} \
     && rm -f /tmp/get-toolchain.py
 

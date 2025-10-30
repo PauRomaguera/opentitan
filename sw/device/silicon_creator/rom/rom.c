@@ -631,7 +631,7 @@ static rom_error_t rom_boot(const manifest_t *manifest, uint32_t flash_exec) {
      * Expected value of the `kCfiRomTryBoot` counter when jumping to the second
      * ROM_EXT image.
      */
-    kCfiRomTryBootManifest1Val = 10 * kCfiIncrement + kCfiRomTryBootVal0,
+	    kCfiRomTryBootManifest1Val = 10 * kCfiIncrement + kCfiRomTryBootVal0,
   };
   const manifest_t *manifest_check = NULL;
   switch (launder32(rom_counters[kCfiRomTryBoot])) {
