@@ -1,9 +1,11 @@
 // Copyright lowRISC contributors (OpenTitan project).
 // Licensed under the Apache License, Version 2.0, see LICENSE for details.
 // SPDX-License-Identifier: Apache-2.0
+
 /*
 bazel test --test_output=streamed --test_timeout=999999 --disk_cache=~/bazel_cache //sw/device/silicon_creator/rom:baseline_epmp_test_sim_verilator
 */
+
 #include "sw/device/silicon_creator/rom/rom_epmp.h"
 
 #include <stdbool.h>
@@ -27,6 +29,7 @@ bazel test --test_output=streamed --test_timeout=999999 --disk_cache=~/bazel_cac
 #include "sw/device/silicon_creator/lib/drivers/uart.h"
 #include "sw/device/silicon_creator/lib/epmp_test_unlock.h"
 #include "sw/device/silicon_creator/rom/rom_epmp.h"
+
 //Generated headers
 #include "rstmgr_regs.h"
 #include "aon_timer_regs.h"
@@ -62,6 +65,8 @@ static uint32_t get_mepc(void) {
   return mepc;
 }
 
+static void set_mepc(uint32_t pc) { CSR_WRITE(CSR_REG_MEPC, pc); }
+
 static inline uint32_t read_mseccfg(void) {
   uint32_t MSECCFG;
   CSR_READ(CSR_REG_MSECCFG, &MSECCFG);
@@ -71,14 +76,12 @@ static inline uint32_t read_mseccfg(void) {
 static inline void write_mseccfg(uint32_t value) {
   CSR_WRITE(CSR_REG_MSECCFG, value);
 }
-static void set_mepc(uint32_t pc) { CSR_WRITE(CSR_REG_MEPC, pc); }
 
 static inline bool addr_in_range(uintptr_t addr, uintptr_t base, uintptr_t size) {
-  // Using unsigned wrap-safe form: (addr - base) < size
   return (addr - base) < size;
 }
 
-// Pointer wrapper for convenience.
+// Pointer wrapper for convenience
 static inline bool is_in_address_space(const void *ptr, uintptr_t base, uintptr_t size) {
   return addr_in_range((uintptr_t)ptr, base, size);
 }
@@ -234,6 +237,7 @@ void rom_exception_handler(void) {
   if (mcause == kIbexExcInstrAccessFault || mcause == kIbexExcIllegalInstrFault) {
     exception_received = (ibex_exc_t)mcause;
     exception_pc = mepc;
+    
     uintptr_t ret = (uintptr_t)__builtin_return_address(0);
     set_mepc((uint32_t)ret);
     return;
@@ -456,7 +460,7 @@ static void test_noexec_eflash(void) {
   CHECK(execute(&eflash[0], kIbexExcInstrAccessFault));
   CHECK(execute(&eflash[eflash_len - 1], kIbexExcInstrAccessFault));
 }
-
+,
 /**
  * 9)
  * Read MMIO
@@ -507,8 +511,6 @@ static void test_write_mmio(void) {
 /**
  * 11)
  * No Exec MMIO
- * Test done by OpenTitan team
- * Also checks the SRAM controller exec permissions
  */
 static void test_noexec_mmio(void) {
   // Any MMIO address should be non-executable by ePMP.
@@ -646,7 +648,7 @@ static void test_rlb_one_to_zero(void) {
   uint32_t m1 = m0 & ~(uint32_t)EPMP_MSECCFG_RLB;
   write_mseccfg(m1);
 
-  // Read back: RLB must be 0; MMWP should remain set.
+  // Read back: RLB must be 0, MMWP should remain set.
   uint32_t m2 = read_mseccfg();
   //00000011b & 00000100b = 0
   CHECK((m2 & EPMP_MSECCFG_RLB) == 0);
@@ -766,7 +768,6 @@ void rom_main(void) {
   #endif
   // Start the tests.
   LOG_INFO("Starting ROM ePMP functional test.");
-  LOG_INFO("Starting ROM ePMP functional test.");
 
   // Initialize shadow copy of the ePMP register configuration.
   memset(&epmp_state, 0, sizeof(epmp_state));
@@ -774,7 +775,6 @@ void rom_main(void) {
   CHECK(epmp_state_check() == kErrorOk);
 
 
-  // Run all tests in order
   LOG_INFO("1) Testing ROM read permission");
   test_read_rom();
 

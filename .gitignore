@@ -91,3 +91,8 @@ book
 
 # Custom Ruff config overrides
 .ruff.toml
+/verilator/
+/.venv/
+/bin/
+/lib64/
+/pyvenv.cfg
