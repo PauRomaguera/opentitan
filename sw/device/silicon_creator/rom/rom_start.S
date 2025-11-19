@@ -462,8 +462,11 @@ LABEL_FOR_TEST(kRomStartWatchdogEnabled)
   li x31, 0x0
 
   // Must be called prior to any Main RAM access.
+  #ifndef DISABLE_ROM_EPMP_INIT
   call rom_epmp_init
-
+  #else   
+  //ePMP init disabled
+  #endif 
   /**
    * Setup C Runtime
    */
