@@ -115,23 +115,25 @@ RISC-V: Anàlisi i Avaluació de Mecanismes de Seguretat Oberts}
 
 \section{Introduction - Context of the thesis}
 \setlength{\parindent}{1em}
-\lettrine[lines=3]{M}{odern} semiconductor designs increasingly embed security features directly in hardware so that sensitive operations can be protected without performance penalties.
+\lettrine[lines=3]{M}{odern} semiconductor designs increasingly embed security features directly in hardware so that sensitive operations can be protected with minimal performance penalties.
 
 The open RISC-V instruction set architecture (ISA) \cite{isa} accelerates this shift by enabling community-driven security extensions and cryptographic instructions that, together with dedicated accelerators and on-chip hardware roots of trust (HRoT), provide robust security with low overhead, safeguarding data and code integrity for end users.
 
-In this thesis, we focus on the HRoT model in RISC-V systems, using OpenTitan as the primary case study \cite{opentitan}. Our analysis centers on the mechanisms that underpin a secure boot chain, particularly Physical Memory Protection (PMP) \cite{pmp}\cite{pmp1} and its enhanced variant ePMP \cite{epmp}, and lastly, cryptographic verification of early firmware.
+In this thesis, we focus on the HRoT model in RISC-V systems, using OpenTitan as the primary case study \cite{opentitan}. Our analysis centers on the mechanisms that underpin a secure boot chain, particularly Physical Memory Protection (PMP) \cite{pmp}\cite{pmp1} and its enhanced variant ePMP \cite{epmp}, which enforce memory access controls from the earliest boot stages. By evaluating how these mechanisms contribute to overall system security, we aim to derive insights and recommendations for designing effective HRoT implementations in RISC-V SoCs.
 
-These mechanisms share common principles and integrate complementary defenses, such as region-based memory isolation (PMP/ePMP), cryptographic firmware verification (Secure Boot) \cite{crypto}, and strict separation of privileges across boot stages.
+HRoT functionality is typically integrated within a System-on-Chip (SoC) and may include a dedicated core alongside hardened peripherals and memories to minimize the attack surface and resist software-based compromise. In this context, a clear separation of roles across boot stages, each with narrowly scoped privileges, enables more robust and reliable protection.  In the remainder of this thesis we experimentally stress-test these mechanisms on OpenTitan’s Earlgrey SoC to assess their effectiveness against realistic adversaries and identify potential weaknesses or misconfigurations.
 
-HRoT functionality is typically integrated within a System-on-Chip (SoC) and may include a dedicated core alongside hardened peripherals and memories to minimize the attack surface and resist software-based compromise. In this context, a clear separation of roles across boot stages, each with narrowly scoped privileges, enables more robust and reliable protection.
+At the same time, advanced RISC-V designs use a general-purpose management core to orchestrate secure boot, power management, and low-level control for larger compute subsystems such as AI accelerators. These management cores often implement only the base PMP extension rather than ePMP. Understanding how security properties change when enhanced features such as machine-mode whitelisting (MMWP) are absent is therefore relevant beyond OpenTitan itself, in particular for heterogeneous SoCs where a relatively simple control core is expected to establish a strong hardware root of trust for more complex accelerators.
+[Safe to mention high level company objectives like this?]
+
 
 \section{Objectives}
 The main objective of this thesis is to analyze and empirically prove the level of security of the open-source Earlgrey SoC from OpenTitan. In particular, the contribution of certain security mechanisms will be examined, such as Secure Boot and enhanced Physical Memory Protection (ePMP) \cite{epmp}, to verify how each function contributes to the system’s overall security.
 
-To stress-test these mechanisms, we will use ablation tests. This involves intentionally modifying or removing specific security policies or functions in order to assess how vulnerable the SoC becomes to certain attack vectors.
+To stress-test these mechanisms, we will use ablation tests. This involves intentionally modifying or removing specific security policies or functions in order to assess how vulnerable the SoC becomes to certain attack vectors. In addition, we compare the effective behaviour of OpenTitan’s ePMP-based configuration against a baseline that relies only on standard PMP semantics. This allows us to characterise which guarantees depend critically on ePMP-specific features and which can be approximated on platforms where a general-purpose control core, responsible for secure boot and power management of larger RISC-V subsystems, implements only base PMP.
 
 In doing so, we can identify which measures are most critical for protecting the system and establish a hierarchy of defenses based on their actual effectiveness.
-\section{Methodology \& Planification}
+\section{Project Management Methodology and Planning}
 The project has been organized according to the Scrum methodology. The duration of tasks are planned in two-week iterative cycles, called sprints. Each task is expected to be  completed within a sprint or, when necessary, decomposed into smaller sub-tasks to fit the two-week cycle. In addition, daily standup meetings are held with Openchip's "Security Features" team to share progress and issues, Sprint Reviews are conducted to evaluate results, and retrospectives identify opportunities for improvement.
 
 As mentioned earlier, each task has been structured to fit biweekly cadence, although some larger tasks have spanned two sprints, depending on issues encountered during execution. The timeline can be seen in the initial Gantt chart in Fig.~\ref{fig-gantt}, which shows the sequence and duration of the main activities.  
@@ -151,6 +153,13 @@ Reaching truly open-source hardware is exceptionally significant. Unlike proprie
 In a world where attacks are increasingly sophisticated and where the technological supply chain may be vulnerable, open-source hardware introduces a new paradigm: trust is not blindly delegated to a single manufacturer, but is instead built collectively through open review and the diversity of contributors involved. This strengthens the foundational security of the system and promotes a more resilient ecosystem against potential threats.
 
 The development of this type of hardware would not have been possible without the prior advances of the RISC-V architecture, whose open and modular design has enabled the community to experiment with, extend, and validate new functionalities, thus laying the groundwork for ambitious projects such as OpenTitan.
+[further revising:]
+The development of this type of hardware would not have been possible without the prior advances of the RISC-V architecture, whose open and modular design has enabled the community to experiment with, extend, and validate new functionalities, thus laying the groundwork for ambitious projects such as OpenTitan.
+
+Beyond the processor core, OpenTitan’s Earlgrey SoC integrates a number of specialised security blocks, including cryptographic engines (for example AES, HMAC, KMAC and the OTBN big-number accelerator), an entropy source and random number generator, a key manager, and a life-cycle controller that governs provisioning and debug access. Together with carefully partitioned non-volatile memory and peripheral isolation, these components implement a comprehensive hardware root of trust.
+
+In this thesis we focus on the parts of Earlgrey that are directly involved in the early boot chain and memory isolation, namely the Ibex core with ePMP, the ROM and flash layout, and the associated boot firmware. Other security features such as the key manager and cryptographic accelerators are acknowledged but remain outside the scope of our experimental evaluation.
+% ...next section...
 
 \section{Threat Model}
 This section defines the threat model of the SoC and outlines the attacker capabilities, the threats considered in-scope for this work, and the threats intentionally excluded from scope.
@@ -374,7 +383,7 @@ Once the ROM has validated the ROM\_EXT's manifest and signature, it updates ePM
 
 
 [A partir d'aquí, WiP]
-\section{Methodology and Planning}
+\section{Experimental Methodology}
 Regarding the methodology, we will make use of simulators such as Verilator, which transforms our digital design (Verilog code) of OpenTitan's Earlgrey SoC into high-level C++ code that allows us to emulate our platform very efficiently, though not with complete accuracy.
 
 OpenTitan provides several tools to carry out development with Verilator, which, depending on the execution flow, are the following:
@@ -463,6 +472,7 @@ doi: 10.1109/ICFPT59805.2023.00056.
 \bibitem{epmp}
 \emph{Secure Memory Protection Extension (PDF)}, 
 Github: riscvarchive/riscv-tee Project. Disponible: \url{https://github.com/riscvarchive/riscv-tee/blob/191b563b08b31cc2974d604a3b670d8666a2e093/Smepmp/Smepmp.pdf} (Accedit: 2025-09-23)
+
 \bibitem{isa}
 \emph{The RISC-V Instruction Set Manual (Unprivileged ISA)}. 
 RISC-V International. Disponible: \url{https://riscv.org/technical/specifications/} (Accedit: 2025-11-15)
@@ -484,14 +494,6 @@ RISC-V International. Disponible: \url{https://github.com/riscv/riscv-isa-manual
 \bibitem{crypto}
 \emph{Verified Boot Crypto}. 
 Chromium OS Design Docs. Disponible: \url{https://www.chromium.org/chromium-os/chromiumos-design-docs/verified-boot-crypto/} (Accedit: 2025-11-15)
-
-\bibitem{epmp}
-\emph{Secure Memory Protection Extension (PDF)}. 
-GitHub: riscvarchive/riscv-tee Project. Disponible: \url{https://github.com/riscvarchive/riscv-tee/blob/191b563b08b31cc2974d604a3b670d8666a2e093/Smepmp/Smepmp.pdf} (Accedit: 2025-11-15)
-
-\bibitem{opentitan}
-\emph{OpenTitan: Open source silicon root of trust (RoT)}. 
-Project homepage. Disponible: \url{https://opentitan.org/} (Accedit: 2025-11-15)
 
 \bibitem{lowrisc}
 \emph{OpenTitan Partnership Makes History: First Open-Source Silicon to Reach Commercial Availability}. 
@@ -517,11 +519,11 @@ Seagate Article. Disponible: \url{https://www.seagate.com/stories/articles/seaga
 \emph{Western Digital Collaborates with lowRISC and Google to Increase Security Transparency in Data-Centric Platforms}. 
 Western Digital Press Release (5 Nov 2019). Disponible: \url{https://www.westerndigital.com/company/newsroom/press-releases/2019/2019-11-05-western-digital-collaborates-with-lowrisc-and-google-to-increase-security-transparency-in-data-centric-platforms} (Accedit: 2025-11-15)
 
-\bibitem{chromebook-integracio-opentitan}
+\bibitem{chromebook}
 \emph{OpenTitan production silicon and early integrations}. 
 lowRISC News (20 Feb 2025). Disponible: \url{https://lowrisc.org/news/the-worlds-first-open-source-security-chip-hits-production-with-google/} (Accedit: 2025-11-15)
 
-\bibitem{trojan-hw-trojan}
+\bibitem{trojan}
 \emph{Hardware Trojans in Chips: A Survey for Detection and Prevention}. 
 Sensors (MDPI), vol. 20, no. 18, 5165 (2020). Disponible: \url{https://www.mdpi.com/1424-8220/20/18/5165} (Accedit: 2025-11-15)
 
