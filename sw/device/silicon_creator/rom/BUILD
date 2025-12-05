@@ -382,7 +382,89 @@ opentitan_test(
     ],
 )
 
+opentitan_test(
+    name = "mmwp_test",
+    srcs = [
+        "epmp_test/mmwp_test.c",
+    ],
+    exec_env = {
+        "//hw/top_earlgrey:sim_verilator": None,
+    },
+    kind = "rom",
+    linker_script = ":linker_script",
+    linkopts = [
+        "-Wl,--defsym=rom_test=1",
+    ],
+    deps = [
+        ":mask_rom_lib",
+        "//hw/top:flash_ctrl_c_regs",
+        "//sw/device/lib/arch:device",
+        "//sw/device/lib/base:abs_mmio",
+        "//sw/device/lib/base:bitfield",
+        "//sw/device/lib/base:csr",
+        "//sw/device/lib/base:macros",
+        "//sw/device/lib/crt",
+        "//sw/device/lib/dif:pinmux",
+        "//sw/device/lib/dif:sram_ctrl",
+        "//sw/device/lib/runtime:hart",
+        "//sw/device/lib/runtime:ibex",
+        "//sw/device/lib/runtime:log",
+        "//sw/device/lib/runtime:print",
+        "//sw/device/lib/testing:pinmux_testutils",
+        "//sw/device/lib/testing/test_framework:check",
+        "//sw/device/lib/testing/test_framework:status",
+        "//sw/device/silicon_creator/lib:epmp_state",
+        "//sw/device/silicon_creator/lib:epmp_test_unlock",
+        "//sw/device/silicon_creator/lib:irq_asm",
+        "//sw/device/silicon_creator/lib/base:chip",
+        "//sw/device/silicon_creator/lib/base:sec_mmio",
+        "//sw/device/silicon_creator/lib/base:static_critical",
+        "//sw/device/silicon_creator/lib/drivers:flash_ctrl",
+        "//sw/device/silicon_creator/lib/drivers:uart",
+    ],
+)
 
+opentitan_test(
+    name = "rlb_test",
+    srcs = [
+        "epmp_test/rlb_test.c",
+    ],
+    exec_env = {
+        "//hw/top_earlgrey:sim_verilator": None,
+    },
+    kind = "rom",
+    linker_script = ":linker_script",
+    linkopts = [
+        "-Wl,--defsym=rom_test=1",
+    ],
+    deps = [
+        ":mask_rom_lib",
+        "//hw/top:flash_ctrl_c_regs",
+        "//sw/device/lib/arch:device",
+        "//sw/device/lib/base:abs_mmio",
+        "//sw/device/lib/base:bitfield",
+        "//sw/device/lib/base:csr",
+        "//sw/device/lib/base:macros",
+        "//sw/device/lib/crt",
+        "//sw/device/lib/dif:pinmux",
+        "//sw/device/lib/dif:sram_ctrl",
+        "//sw/device/lib/runtime:hart",
+        "//sw/device/lib/runtime:ibex",
+        "//sw/device/lib/runtime:log",
+        "//sw/device/lib/runtime:print",
+        "//sw/device/lib/testing:pinmux_testutils",
+        "//sw/device/lib/testing/test_framework:check",
+        "//sw/device/lib/testing/test_framework:status",
+        "//sw/device/silicon_creator/lib:epmp_state",
+        "//sw/device/silicon_creator/lib:epmp_test_unlock",
+        "//sw/device/silicon_creator/lib:irq_asm",
+        "//sw/device/silicon_creator/lib/base:chip",
+        "//sw/device/silicon_creator/lib/base:sec_mmio",
+        "//sw/device/silicon_creator/lib/base:static_critical",
+        "//sw/device/silicon_creator/lib/drivers:flash_ctrl",
+        "//sw/device/silicon_creator/lib/drivers:uart",
+    ],
+)
 filegroup(
     name = "english_breakfast_test_rom_bootstrap_srcs",
     srcs = [

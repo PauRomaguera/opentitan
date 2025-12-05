@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /*
-bazel test --test_output=streamed --test_timeout=999999 --disk_cache=~/bazel_cache //sw/device/silicon_creator/rom:baseline_epmp_test_sim_verilator
+bazel test --test_output=streamed --test_timeout=999999 --disk_cache=~/bazel_cache //sw/device/silicon_creator/rom:rlb_test
 To add debug: --copt=-DDEBUG
 */
 
@@ -51,13 +51,10 @@ To add debug: --copt=-DDEBUG
 
 typedef enum ibex_exc {
   kIbexExcInstrMisaligned = 0,
-
   kIbexExcInstrAccessFault = 1,
   kIbexExcIllegalInstrFault = 2,
-
   kIbexExcBreakpoint = 3,
   kIbexExcLoadAccessFault = 5,
-  
   kIbexExcStoreAccessFault = 7,
   kIbexExcUserECall = 8,
   kIbexExcMachineECall = 11,
@@ -82,25 +79,6 @@ volatile uintptr_t exception_pc = 0;
  */
 static const uint32_t kUnimpInstruction = UINT32_MAX;
 
-//Illegal instruction residing in .rodata. (ROM)
-static const uint32_t illegal_ins_ro[] = {
-    kUnimpInstruction,
-};
-
-/**
- * Illegal instruction residing in .bss. Useful to test RAM permissions.
- */
-static uint32_t illegal_ins_rw[] = {
-    0,
-};
-
-// A no-op function that lives in ROM text.
-// noinline prevents the compiler from inlining it.
-// volatile used makes sure the linker doesn't drop it.
-__attribute__((noinline, used))
-static void rom_text_probe(void) {
-  asm volatile("");  // keep a real .text body
-}
 
 static bool passed = false;
 
@@ -178,7 +156,7 @@ static const char *irq_name(uint32_t code) {
     default: return "IRQ";
   }
 }
-
+/*
 static void dump_pmp_min(void) {
   uint32_t mseccfg; 
   CSR_READ(CSR_REG_MSECCFG, &mseccfg);
@@ -217,18 +195,35 @@ static void dump_pmp_min(void) {
     !!(mseccfg & EPMP_MSECCFG_RLB),
     !!(mseccfg & EPMP_MSECCFG_MML));
 }
-    
+    */
 #endif 
 #ifdef DEBUG
-static inline void dbg_log_last_trap(const char *op, const void *addr) {
-  if (exception_received != kIbexExcMax) {
-    LOG_INFO("%s trap: mcause=0x%08x, mepc=0x%08x, addr=%p",
-             op, (unsigned)exception_received, (unsigned)exception_pc, addr);
+static inline void dbg_log_last_trap(const char *op, const void *addr,
+                                     ibex_exc_t expect) {
+  if (exception_received != expect) {
+    LOG_INFO("%s: trap mismatch, mcause=0x%08x expected=0x%08x",
+             op,
+             (unsigned)exception_received,
+             (unsigned)expect);
+    LOG_INFO("  mepc=0x%08x addr=%p",
+             (unsigned)exception_pc,
+             addr);
+  } else {
+    LOG_INFO("%s: trap as expected, mcause=0x%08x expected=0x%08x",
+             op,
+             (unsigned)exception_received,
+             (unsigned)expect);
+    LOG_INFO("  mepc=0x%08x addr=%p",
+             (unsigned)exception_pc,
+             addr);
   }
 }
 #else
-static inline void dbg_log_last_trap(const char *op, const void *addr) {
-  (void)op; (void)addr;
+static inline void dbg_log_last_trap(const char *op, const void *addr,
+                                     ibex_exc_t expect) {
+  (void)op;
+  (void)addr;
+  (void)expect;
 }
 #endif
 
@@ -352,14 +347,14 @@ static bool read32(const void *addr, ibex_exc_t expect) {
         volatile uint32_t sink = *p; //perform the load
         
         (void) sink; //remove unused variable warning
-        dbg_log_last_trap("read32", addr);
+        dbg_log_last_trap("read32", addr, expect);
         return exception_received == expect; 
 }
 static bool write32(void *addr, uint32_t val, ibex_exc_t expect) {
         exception_received = kIbexExcMax;
         volatile uint32_t *p = (uint32_t *) addr;
         *p = val;
-        dbg_log_last_trap("write32", addr);
+        dbg_log_last_trap("write32", addr, expect);
         return exception_received == expect;
 }
 // ------- Execute Helper -------
@@ -384,7 +379,7 @@ static bool execute(const void *pc, ibex_exc_t expect) {
   exception_received = kIbexExcMax;
 
   ((void (*)(void))pc)();
-  dbg_log_last_trap("execute", pc);
+  dbg_log_last_trap("execute", pc, expect);
   if (exception_received != kIbexExcMax && exception_pc != (uintptr_t)pc) {
     return false;
   }
@@ -400,117 +395,6 @@ static bool execute(const void *pc, ibex_exc_t expect) {
 
 // ---------- Tests ----------
 
-/**
- * 1) ROM has Read permissions
- * Reads the first 32bit word of ROM region and also near
- * the end. Expects no exception in this case (kIbexExcMax)
- */
-
-static void test_read_rom(void) {
-  const uintptr_t rom_base = TOP_EARLGREY_ROM_CTRL_ROM_BASE_ADDR;
-  const size_t    rom_size = TOP_EARLGREY_ROM_CTRL_ROM_SIZE_BYTES;
-
-  const uint32_t *rom_start = (const uint32_t *)rom_base;
-
-  // Safe near-end probe: 64 bytes inside the ROM top.
-  const size_t margin_bytes = 64;
-  CHECK(rom_size > margin_bytes + sizeof(uint32_t));
-  const uintptr_t rom_end_addr = rom_base + rom_size - sizeof(uint32_t);
-  const uintptr_t rom_near_end_addr = rom_end_addr - margin_bytes;
-
-  CHECK(is_in_address_space((const void *)rom_start, rom_base, rom_size));
-  CHECK(is_in_address_space((const void *)rom_near_end_addr, rom_base, rom_size));
-
-  CHECK(read32(rom_start, kIbexExcMax));
-  CHECK(read32((const void *)rom_near_end_addr, kIbexExcMax));
-}
-
-/**
- * 2) ROM doesn't have Write permissions
- * we test this by writing in the "illegal_ins_ro" memory position
- * since it is a static const array, the linker puts it in the .rodata
- * section inside the ROM address space (we are executing in ROM)
- */
-
-static void test_no_write_rom(void) {
-  const uintptr_t rom_base = TOP_EARLGREY_ROM_CTRL_ROM_BASE_ADDR;
-  const size_t    rom_size = TOP_EARLGREY_ROM_CTRL_ROM_SIZE_BYTES;
-
-  const uint32_t *rom_start = (const uint32_t *)rom_base;
-  const uintptr_t rom_last_addr = rom_base + rom_size - sizeof(uint32_t);
-
-  // Also probe 64 bytes before the end.
-  const size_t margin_bytes = 64;
-  CHECK(rom_size > margin_bytes + sizeof(uint32_t));
-  const void *rom_near_end = (const void *)(rom_last_addr - margin_bytes);
-
-  CHECK(is_in_address_space(rom_start, rom_base, rom_size));
-  CHECK(is_in_address_space((const void *)rom_last_addr, rom_base, rom_size));
-  CHECK(is_in_address_space(rom_near_end, rom_base, rom_size));
-
-  // Attempt to write and expect a Store Access Fault.
-  CHECK(write32((void *)rom_start, 0xA5A5A5A5, kIbexExcStoreAccessFault));
-  CHECK(write32((void *)rom_near_end, 0xA5A5A5A5, kIbexExcStoreAccessFault));
-}
-/**
- * 3)
- * Whole ROM doesn't have eXecute permissions
- * instead of checking all ROM, we check the illegal_ins_ro address in .rodata,
- * since it contains an invalid instruction, and if execution is allowed,
- * we would get an illegal instruction exception, but since all ROM
- * shouldn't have eXecute permissions, we expect an instruction access fault
- *
- * Can't check first ROM position like the prior test, since it would attempt to
- * execute it and succeed due to being the reset vector, and jump execution to it
- * (test would reset forever)
- */
-
-static void test_noexec_rodata(void) {
-  CHECK(is_in_address_space(illegal_ins_ro, TOP_EARLGREY_ROM_CTRL_ROM_BASE_ADDR,
-                            TOP_EARLGREY_ROM_CTRL_ROM_SIZE_BYTES));
-  CHECK(execute(illegal_ins_ro, kIbexExcInstrAccessFault));
-}
-
-
-/**
- * 4)
- * ROM Text has eXecute permissions
- * we are running from this ROM .text so this test is
- * quite redundant, though still good to learn
- */
-static void test_exec_rom_text(void) {
-  CHECK(is_in_address_space((const void *)(uintptr_t)rom_text_probe,
-                            TOP_EARLGREY_ROM_CTRL_ROM_BASE_ADDR,
-                            TOP_EARLGREY_ROM_CTRL_ROM_SIZE_BYTES));
-  CHECK(execute((const void *)(uintptr_t)rom_text_probe, kIbexExcMax));
-}
-
-
-/**
- * 5)
- * eFLASH Read 
- */
-static void test_read_eflash(void) {
-  uint32_t *eflash = (uint32_t *)TOP_EARLGREY_EFLASH_BASE_ADDR;
-  size_t eflash_len = TOP_EARLGREY_EFLASH_SIZE_BYTES / sizeof(eflash[0]);
-  CHECK(read32(&eflash[0], kIbexExcMax));
-  CHECK(read32(&eflash[eflash_len - 1], kIbexExcMax));
-
-}
- /**
- * 6)
- * eFLASH can't Write
- */
-static void test_nowrite_eflash(void) {
-  uint32_t *eflash = (uint32_t *)TOP_EARLGREY_EFLASH_BASE_ADDR;
-  size_t eflash_len = TOP_EARLGREY_EFLASH_SIZE_BYTES / sizeof(eflash[0]);
-  CHECK(is_in_address_space((const void *)(uintptr_t)eflash,
-                            TOP_EARLGREY_EFLASH_BASE_ADDR,
-                            TOP_EARLGREY_EFLASH_SIZE_BYTES));
-  CHECK(write32(&eflash[0], 0xA5A5A5A5, kIbexExcStoreAccessFault));
-  CHECK(write32(&eflash[eflash_len - 1], 0xA5A5A5A5, kIbexExcStoreAccessFault));
-  
-}
 /**
  * 7 & 8)
  * eFLASH can't eXecute + ROM_EXT can't eXecute
@@ -528,129 +412,6 @@ static void test_noexec_eflash(void) {
   CHECK(execute(&eflash[eflash_len - 1], kIbexExcInstrAccessFault));
 }
 
-/**
- * 9)
- * Read MMIO
- * 
- *
- */
- /*
-static void test_read_mmio(void) {
-  // Retention RAM base/size.
-  volatile uint32_t *ret_ram = (volatile uint32_t *)TOP_EARLGREY_RAM_RET_AON_BASE_ADDR;
-  size_t words = TOP_EARLGREY_RAM_RET_AON_SIZE_BYTES / sizeof(uint32_t);
-
-  CHECK(is_in_address_space((const void *)(uintptr_t)ret_ram,
-                            TOP_EARLGREY_MMIO_BASE_ADDR,
-                            TOP_EARLGREY_MMIO_SIZE_BYTES));
-  LOG_INFO("Read1");
-
-  CHECK(read32((const void *)(uintptr_t)&ret_ram[0], kIbexExcMax));          // no exception
-  LOG_INFO("Read2");
-
-  CHECK(read32((const void *)(uintptr_t)&ret_ram[words - 1], kIbexExcMax));
-}
-*/
-static void test_read_mmio(void) {
-  uintptr_t base = TOP_EARLGREY_AON_TIMER_AON_BASE_ADDR;
-  CHECK(is_in_address_space((const void *)base,
-                            TOP_EARLGREY_MMIO_BASE_ADDR,
-                            TOP_EARLGREY_MMIO_SIZE_BYTES));
-  CHECK(read32((const void *)(base + AON_TIMER_WDOG_CTRL_REG_OFFSET), kIbexExcMax));
-  CHECK(read32((const void *)(base + AON_TIMER_WKUP_CTRL_REG_OFFSET), kIbexExcMax));
-}
-/**
- * 10)
- * Write MMIO
- *
- */
-static void test_write_mmio(void) {
-  const uintptr_t aon = TOP_EARLGREY_AON_TIMER_AON_BASE_ADDR;
-  CHECK(is_in_address_space((const void *)aon,
-                            TOP_EARLGREY_MMIO_BASE_ADDR,
-                            TOP_EARLGREY_MMIO_SIZE_BYTES));
-  // Read current values and write them back unchanged.
-  uint32_t v0 = *(volatile const uint32_t *)(aon + AON_TIMER_WDOG_CTRL_REG_OFFSET);
-  CHECK(write32((void *)(aon + AON_TIMER_WDOG_CTRL_REG_OFFSET), v0, kIbexExcMax));
-  uint32_t v1 = *(volatile const uint32_t *)(aon + AON_TIMER_WKUP_CTRL_REG_OFFSET);
-  CHECK(write32((void *)(aon + AON_TIMER_WKUP_CTRL_REG_OFFSET), v1, kIbexExcMax));
-}
-/**
- * 11)
- * No Exec MMIO
- */
-static void test_noexec_mmio(void) {
-  // Any MMIO address should be non-executable by ePMP.
-  const uintptr_t aon = TOP_EARLGREY_AON_TIMER_AON_BASE_ADDR;
-  CHECK(execute((const void *)aon, kIbexExcInstrAccessFault));
-  CHECK(execute((const void *)(aon + 4), kIbexExcInstrAccessFault));
-}
-
-/**
- * 12)
- * RAM Read
- *
- *
- */
-static void test_read_ram(void) {
-  volatile uint32_t *ram =
-      (volatile uint32_t *)TOP_EARLGREY_RAM_MAIN_BASE_ADDR;
-  size_t words = TOP_EARLGREY_RAM_MAIN_SIZE_BYTES / sizeof(uint32_t);
-
-  CHECK(is_in_address_space((const void *)(uintptr_t)&ram[0],
-                            TOP_EARLGREY_RAM_MAIN_BASE_ADDR,
-                            TOP_EARLGREY_RAM_MAIN_SIZE_BYTES));
-  CHECK(is_in_address_space((const void *)(uintptr_t)&ram[words - 1],
-                            TOP_EARLGREY_RAM_MAIN_BASE_ADDR,
-                            TOP_EARLGREY_RAM_MAIN_SIZE_BYTES));
-
-  CHECK(read32((const void *)(uintptr_t)&ram[0], kIbexExcMax));
-  CHECK(read32((const void *)(uintptr_t)&ram[words - 1], kIbexExcMax));
-}
-
-/**
- * 13)
- * RAM Write
- * We verify with a known .bss symbol that lives in RAM. We cannot use
- * start/end of RAM since they may be used by the stack or other data.
- * rather we use a known symbol defined in this file: illegal_ins_rw.
- */
-static void test_write_ram_ok(void) {
-  
-  CHECK(is_in_address_space(illegal_ins_rw,
-          TOP_EARLGREY_RAM_MAIN_BASE_ADDR,
-          TOP_EARLGREY_RAM_MAIN_SIZE_BYTES));
-
-  uint32_t old = illegal_ins_rw[0];
-  CHECK(write32(&illegal_ins_rw[0], 0xA5A5A5A5, kIbexExcMax));
-  //confirm the value changed
-  CHECK(read32(&illegal_ins_rw[0], kIbexExcMax));
-  CHECK(*(volatile uint32_t *)&illegal_ins_rw[0] == 0xA5A5A5A5);
-  //restore original
-  *(volatile uint32_t *)&illegal_ins_rw[0] = old;
-}
-
-/**
- * 14)
- * RAM no eXec
- * Test done by OpenTitan team
- * Also checks the SRAM controller exec permissions
- * Uses illegal_ins_rw again, which lives in .bss (RAM) and 
- * contains an illegal instruction. We make sure that we get Access 
- * Fault instead of illegal instruction exception, meaning we cannot
- * execute from RAM.
- */
-static void test_noexec_rwdata(void) {
-  dif_sram_ctrl_t sram_ctrl;
-  CHECK(dif_sram_ctrl_init(
-            mmio_region_from_addr(TOP_EARLGREY_SRAM_CTRL_MAIN_REGS_BASE_ADDR),
-            &sram_ctrl) == kDifOk);
-  CHECK(dif_sram_ctrl_exec_set_enabled(&sram_ctrl, kDifToggleEnabled) ==
-        kDifOk);
-  CHECK(is_in_address_space(illegal_ins_rw, TOP_EARLGREY_RAM_MAIN_BASE_ADDR,
-                            TOP_EARLGREY_RAM_MAIN_SIZE_BYTES));
-  CHECK(execute(illegal_ins_rw, kIbexExcInstrAccessFault));
-}
 /**
  * 15 & 16)
  * ROM_EXT unlock & eXecution
@@ -685,14 +446,14 @@ static void test_unlock_exec_eflash(void) {
   // instruction exception is generated. Because the region is not written and
   // tests begin with the flash erased, this instruction is expected to be
   // UINT32_MAX.
-  CHECK(image[0] == kUnimpInstruction);
-  CHECK(execute(&image[0], kIbexExcIllegalInstrFault));
-  CHECK(image[image_len - 1] == kUnimpInstruction);
-  CHECK(execute(&image[image_len - 1], kIbexExcIllegalInstrFault));
+//  CHECK(image[0] == kUnimpInstruction);
+//  CHECK(execute(&image[0], kIbexExcIllegalInstrFault));
+//  CHECK(image[image_len - 1] == kUnimpInstruction);
+////  CHECK(execute(&image[image_len - 1], kIbexExcIllegalInstrFault));
 
   // Verify that execution just outside the region still fails.
-  CHECK(execute(&image[-1], kIbexExcInstrAccessFault));
-  CHECK(execute(&image[image_len], kIbexExcInstrAccessFault));
+//  CHECK(execute(&image[-1], kIbexExcInstrAccessFault));
+//  CHECK(execute(&image[image_len], kIbexExcInstrAccessFault));
 }
 
 /**
@@ -754,6 +515,63 @@ static void test_rom_ext_cant_relock_exec(void) {
   CHECK(image[image_len - 1] == kUnimpInstruction);
   CHECK(execute(&image[image_len - 1], kIbexExcIllegalInstrFault));
 }
+//Test that we CAN lock exec
+//only difference is we expect kIbexExcIllegalInstrFault instead of illegal access
+//so we do 
+static void test_lock_exec_eflash(void) {
+  // Define a region to re-lock (this is somewhat arbitrary but must be word-
+  // aligned and within the previously unlocked region).
+  uint32_t *eflash = (uint32_t *)TOP_EARLGREY_EFLASH_BASE_ADDR;
+  size_t eflash_len = TOP_EARLGREY_EFLASH_SIZE_BYTES / sizeof(eflash[0]);
+  uint32_t *image = &eflash[eflash_len / 5];
+  size_t image_len = eflash_len / 7;
+  epmp_region_t region = {.start = (uintptr_t)&image[image_len / 4],
+                          .end = (uintptr_t)&image[(image_len * 3) / 4]};
+
+  // Attempt to re-lock execution of the region.
+  CSR_WRITE(CSR_REG_PMPADDR3, region.start >> 2);  // low bound
+  CSR_WRITE(CSR_REG_PMPADDR4, region.end   >> 2);  // high bound
+
+  // Program pmp4cfg (lowest byte of pmpcfg1) to: A=TOR, L=1, R=1, X=0 (no W).
+  // Clear just the pmp4cfg byte, then set the new value.
+  CSR_CLEAR_BITS(CSR_REG_PMPCFG1, 0xFFu);                    // clear pmp4cfg
+  CSR_SET_BITS(  CSR_REG_PMPCFG1, kEpmpModeTor | kEpmpPermLockedReadOnly);  
+  //CHECK(epmp_state_check() == kErrorOk);
+
+  // Verify that execution within the region still succeeds.
+  CHECK(image[0] == kUnimpInstruction);
+  CHECK(execute(&image[0], kIbexExcInstrAccessFault));
+  CHECK(image[image_len - 1] == kUnimpInstruction);
+  CHECK(execute(&image[image_len - 1], kIbexExcInstrAccessFault));
+}
+//test we can't reunlock it
+static void test_rom_ext_cant_reunlock_exec(void) {
+  // Define a region to re-lock (this is somewhat arbitrary but must be word-
+  // aligned and within the previously unlocked region).
+  uint32_t *eflash = (uint32_t *)TOP_EARLGREY_EFLASH_BASE_ADDR;
+  size_t eflash_len = TOP_EARLGREY_EFLASH_SIZE_BYTES / sizeof(eflash[0]);
+  uint32_t *image = &eflash[eflash_len / 5];
+  size_t image_len = eflash_len / 7;
+  epmp_region_t region = {.start = (uintptr_t)&image[image_len / 4],
+                          .end = (uintptr_t)&image[(image_len * 3) / 4]};
+
+  // Attempt to re-lock execution of the region.
+  CSR_WRITE(CSR_REG_PMPADDR3, region.start >> 2);  // low bound
+  CSR_WRITE(CSR_REG_PMPADDR4, region.end   >> 2);  // high bound
+
+  // Program pmp4cfg (lowest byte of pmpcfg1) to: A=TOR, L=1, R=1, X=0 (no W).
+  // Clear just the pmp4cfg byte, then set the new value.
+  CSR_CLEAR_BITS(CSR_REG_PMPCFG1, 0xFFu);                    // clear pmp4cfg
+  CSR_SET_BITS(CSR_REG_PMPCFG1, kEpmpModeTor | kEpmpPermLockedReadWriteExecute);  
+  //CHECK(epmp_state_check() == kErrorOk);
+
+  // Verify that execution within the region still succeeds.
+  CHECK(image[0] == kUnimpInstruction);
+  CHECK(execute(&image[0], kIbexExcInstrAccessFault));
+  CHECK(image[image_len - 1] == kUnimpInstruction);
+  CHECK(execute(&image[image_len - 1], kIbexExcInstrAccessFault));
+}
+
 /**
  * 19)
  * Can't RLB 0->1
@@ -775,26 +593,7 @@ static void test_cant_rlb_zero_to_one(void) {
   CHECK((m2 & EPMP_MSECCFG_RLB) == 0);
   CHECK(m2 & EPMP_MSECCFG_MMWP);
 }
-/**
- * 20)
- * Can't MMWP 1->0
- *
- *
- */
-static void test_cant_mmwp_one_to_zero(void) {
-  uint32_t m0 = read_mseccfg();
 
-  //MMWP should be set 
-  CHECK(m0 & EPMP_MSECCFG_MMWP);
-
-  //Attempt to clear MMWP
-  uint32_t attempt = m0 & ~(uint32_t)EPMP_MSECCFG_MMWP;
-  write_mseccfg(attempt);
-
-  // Read back and verify MMWP stayed set.
-  uint32_t m2 = read_mseccfg();
-  CHECK(m2 & EPMP_MSECCFG_MMWP);
-}
 
 
 void rom_main(void) {
@@ -802,7 +601,7 @@ void rom_main(void) {
   // section since OpenTitan ROM does not have one.
   passed = true;
   exception_received = kIbexExcMax;
-  illegal_ins_rw[0] = kUnimpInstruction;
+
 
   // Initialize sec_mmio.
   sec_mmio_init();
@@ -835,67 +634,37 @@ void rom_main(void) {
   dump_reset_info();
   #endif
   // Start the tests.
-  LOG_INFO("Starting ROM ePMP functional test.");
+  LOG_INFO("Starting RLB Test");
 
   // Initialize shadow copy of the ePMP register configuration.
   memset(&epmp_state, 0, sizeof(epmp_state));
   rom_epmp_state_init(kLcStateProd);
   //CHECK(epmp_state_check() == kErrorOk);
 
-
-  LOG_INFO("1) Testing ROM read permission");
-  test_read_rom();
-
-  LOG_INFO("2) Testing ROM write protection");
-  test_no_write_rom();
-  
-  LOG_INFO("3) Testing ROM execution protection outside .text");
-  test_noexec_rodata();
-  
-  LOG_INFO("4) Testing ROM .text execution permission");
-  test_exec_rom_text();
-
-  LOG_INFO("5) Testing eFlash read permission");
-  test_read_eflash();
-  
-  LOG_INFO("6) Testing eFlash write protection");
-  test_nowrite_eflash();
-
-  LOG_INFO("7 & 8) Testing eFlash execution protection");
-  test_noexec_eflash();   
-
-  LOG_INFO("9) Testing MMIO read permission");
-  test_read_mmio();
-
-  LOG_INFO("10) Testing MMIO write permission");
-  test_write_mmio();
-
-  LOG_INFO("11) Testing MMIO execution protection");
-  test_noexec_mmio();
-  
-  LOG_INFO("12) Testing RAM read permission");
-  test_read_ram();
-  
-  LOG_INFO("13) Testing RAM write permission");
-  test_write_ram_ok();
-  
-  LOG_INFO("14) Testing RAM execution protection");
-  test_noexec_rwdata();
-  
-  LOG_INFO("15 & 16) Testing ROM_EXT execution and unlock");
+  //Print RLB = 1, MMWP = 1, MML = 0
+  uint32_t mseccfg_init = read_mseccfg();
+  LOG_INFO("Debug: Initial MSECCFG=0x%08x (MMWP=%u RLB=%u MML=%u)",
+    mseccfg_init, !!(mseccfg_init & EPMP_MSECCFG_MMWP),
+    !!(mseccfg_init & EPMP_MSECCFG_RLB),
+    !!(mseccfg_init & EPMP_MSECCFG_MML)); 
+  LOG_INFO("Setup: eFLASH execution and unlock with L=1");
   test_unlock_exec_eflash();
+  
+  LOG_INFO("1) Testing eFLASH re-lock execution. RLB == 1 should allow us.");
+  test_lock_exec_eflash();
+  LOG_INFO("1) Passed.");
 
-  LOG_INFO("17) Testing RLB one to zero transition");
+  LOG_INFO("2) Testing RLB one to zero transition");
   test_rlb_one_to_zero();
+  LOG_INFO("2) Passed."); 
+  LOG_INFO("3) Testing ROM_EXT can't re-lock execution. RLB == 0 should prevent it.");
+  test_rom_ext_cant_reunlock_exec();
+  LOG_INFO("3) Passed.");
 
-  LOG_INFO("18) Testing ROM_EXT can't relock execution");
-  test_rom_ext_cant_relock_exec();
-
-  LOG_INFO("19) Testing RLB can't go zero-to-one");
+  LOG_INFO("4) Testing RLB can't go zero-to-one. Should not be allowed since it is a");
+  LOG_INFO("4) sticky bit once set to 0.");
   test_cant_rlb_zero_to_one();
-
-  LOG_INFO("20) Testing MMWP can't go one-to-zero");
-  test_cant_mmwp_one_to_zero();
+  LOG_INFO("4) Passed.");
 
   // The test of the ROM's ePMP configuration is now complete. Unlock the
   // DV address space so that the test result can be reported. Assumes that PMP

@@ -70,8 +70,13 @@ rom_epmp_init:
   csrw pmpaddr4, zero // ROM_EXT TEXT high
 
   // eFLASH
+  #ifndef DISABLE_EFLASH_RULE
   li   t0, NAPOT(TOP_EARLGREY_EFLASH_BASE_ADDR, TOP_EARLGREY_EFLASH_SIZE_BYTES)
   csrw pmpaddr5, t0
+  #endif 
+
+
+
 
   // MMIO
   li   t0, TOR(TOP_EARLGREY_MMIO_BASE_ADDR)
@@ -94,7 +99,11 @@ rom_epmp_init:
   // Set PMP configuration registers.
   li   t0, CFG_INDEX(1  % 4, EPMP_CFG_A_TOR   | EPMP_CFG_LRX) | /* ROM TEXT    */ \
            CFG_INDEX(2  % 4, EPMP_CFG_A_NAPOT | EPMP_CFG_LR)    /* ROM         */
-  li   t1, CFG_INDEX(5  % 4, EPMP_CFG_A_NAPOT | EPMP_CFG_LR)    /* eFLASH      */
+           
+#ifndef DISABLE_EFLASH_RULE
+  li   t1, CFG_INDEX(5  % 4, EPMP_CFG_A_NAPOT | EPMP_CFG_LR)    /* eFLASH   */
+  csrw pmpcfg1, t1
+#endif
   li   t2, CFG_INDEX(11 % 4, EPMP_CFG_A_TOR   | EPMP_CFG_LRW)   /* MMIO        */
   li   t3, CFG_INDEX(13 % 4, EPMP_CFG_A_NAPOT | EPMP_CFG_LRWX)| /* Debug ROM   */ \
            CFG_INDEX(14 % 4, EPMP_CFG_A_NA4   | EPMP_CFG_L)   | /* Stack Guard */ \
