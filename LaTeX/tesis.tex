@@ -350,7 +350,7 @@ Immediately following reset, the processor begins execution at the assembly entr
 \noindent
 
 \paragraph{Enabling ROM\_EXT Execution}
-Upon successful signature validation, the ROM updates the ePMP configuration to grant execution permissions to the ROM\_EXT text section. This update, performed by \texttt{rom\_epmp\_unlock\_rom\_ext\_rx}, relies on \texttt{mseccfg.RLB}=1 to modify previously locked entries. Once control is transferred, subsequent stages can clear this bit to prevent further changes. This staged approach ensures that the flash memory remains non-executable until cryptographic verification is complete, maintaining a strict security posture.
+Upon successful signature validation, the ROM updates the ePMP configuration to grant execution permissions to the ROM\_EXT text section. This update, performed by \texttt{rom\_epmp\_unlock\_rom\_ext\_rx}, leverages the PMP priority mechanism rather than modifying locked entries. It programs a new PMP rule at a lower index (higher priority) than the generic eFlash entry. This new rule specifically targets the ROM\_EXT \texttt{.text} (instructions) range with \texttt{RX} permissions, effectively overriding the broader read-only restriction for that section. This staged approach ensures that the flash memory remains non-executable until cryptographic verification is complete, maintaining a strict security posture.
 
 \section{Experimental Methodology}
 
