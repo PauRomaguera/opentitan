@@ -316,13 +316,7 @@ During the ROM and ROM\_EXT stages, strict adherence to the Principle of Least P
 This section analyzes the transition of OpenTitan's ePMP configuration from a minimal reset state to a fully-fledged runtime policy.
 
 \paragraph{Hardwired Configuration}
-At reset, Ibex loads a minimal ePMP state from RTL constants. The arrays \texttt{PmpCfgRst[16]} and \texttt{PmpAddrRst[16]} predefine a small set of regions (ROM, MMIO, Debug ROM) while leaving the remainder \textit{OFF}. The machine security configuration CSR resets to \texttt{mseccfg.RLB}=1 and \texttt{mseccfg.MMWP}=1. Thus, unmatched addresses are denied by default in M-mode, and the ROM is allowed to refine or remove locked entries during early boot. Leaving unused entries \textit{OFF} is therefore safe: with \texttt{MMWP}=1 there are no default-allow gaps at reset.
-
-\paragraph{Hardwired Configuration}
 At reset, Ibex loads a minimal configuration from RTL constants, covering only essential regions (ROM, MMIO, Debug) while leaving the rest \textit{OFF}. Crucially, \texttt{mseccfg} resets to \texttt{RLB=1} and \texttt{MMWP=1}. This ensures that unmatched addresses are denied by default—closing potential gaps, while allowing the ROM to safely refine locked entries during the boot sequence.
-
-\paragraph{Firmware Initialization}
-Immediately following reset, the processor begins execution at the assembly entry point \texttt{rom\_start.S}. This startup code performs minimal initialization and ends up calling the function \texttt{rom\_epmp\_init}. It is important to note that prior to this function's execution, critical resources such as eFlash and SRAM are not yet mapped by any PMP entry, though they remain unaccessible due to \texttt{MMWP}=1.
 
 \paragraph{Firmware Initialization}
 Immediately following reset, the processor begins execution at the assembly entry point \texttt{rom\_start.S}. This startup code performs minimal initialization before invoking the assembly function \texttt{rom\_epmp\_init}. Prior to this function's execution, critical resources such as eFlash and SRAM are not yet mapped by any PMP entry although they remain inaccessible due to the default-deny policy enforced by \texttt{MMWP}=1. The initialization routine then establishes the runtime memory layout summarized in Table~\ref{tab:epmp-rom}. Key regions include \textbf{ROM TEXT} (RX), \textbf{ROM} data (R), and \textbf{MMIO} (RW). Notably, the \textbf{eFlash} is mapped as Read-Only to allow signature verification, but remains non-executable to prevent premature code execution.
