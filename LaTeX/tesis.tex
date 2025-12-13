@@ -82,7 +82,7 @@ RISC-V: Anàlisi i Avaluació de Mecanismes de Seguretat Oberts}
 \begin{center}
 \parbox{0.915\textwidth}
 {\sffamily
-\textbf{Resum--} L’evolució ràpida del hardware d’altes prestacions ha transformat la indústria dels semiconductors, possibilitant avenços en intel·ligència artificial (IA) i computació d’altes prestacions (HPC). A mesura que aquests sistemes esdevenen més sofisticats, garantir la seguretat del xip és essencial per protegir les dades que processen. Aquesta tesi avalua funcionalitats de seguretat de codi obert en sistemes basats en RISC-V mitjançant proves adversàries, centrant-nos en mecanismes de protecció de memòria com la protecció física de memòria (PMP) i la PMP millorada (ePMP), en relació al Secure Boot. Prenent com a cas d’estudi el System on Chip (SoC) anomenat Earlgrey d’OpenTitan \cite{opentitan} \cite{meza2023} \cite{musa2024}, afeblim o eliminem proteccions seleccionades per quantificar la contribució de cada mecanisme i derivar recomanacions pràctiques per enfortir dissenys de Hardware Root of Trust (HRoT).
+\textbf{Resum--} L'evolució ràpida del hardware d'altes prestacions ha transformat la indústria dels semiconductors, possibilitant avenços en intel·ligència artificial (IA) i computació d'altes prestacions (HPC). A mesura que aquests sistemes esdevenen més sofisticats, garantir la seguretat del xip és essencial per protegir les dades que processen. Aquesta tesi avalua funcionalitats de seguretat de codi obert en sistemes basats en RISC-V mitjançant proves adversàries, centrant-nos en mecanismes de protecció de memòria com la protecció física de memòria (PMP) i la PMP millorada (ePMP), en relació al Secure Boot. Prenent com a cas d'estudi el System on Chip (SoC) anomenat Earlgrey d'OpenTitan \cite{opentitan} \cite{meza2023} \cite{musa2024}, afeblim o eliminem proteccions seleccionades per quantificar la contribució de cada mecanisme i derivar recomanacions pràctiques per enfortir dissenys de Hardware Root of Trust (HRoT).
 
 
 \\
@@ -94,10 +94,9 @@ RISC-V: Anàlisi i Avaluació de Mecanismes de Seguretat Oberts}
 %\end{abstract}
 %\bigskip
 %\begin{abstract}
-\textbf{Abstract--} The rapid evolution of high-performance hardware has transformed the semiconductor industry, enabling advances in artificial intelligence (AI) and high-performance computing (HPC). As these systems grow more sophisticated, ensuring chip security is essential to protect the data they process. This thesis evaluates open-source security features in RISC-V-based systems using adversarial testing, focusing on memory protection mechanisms such as Physical Memory Protection (PMP) and enhanced PMP (ePMP) within the context of Secure Boot. Using OpenTitan’s Earlgrey System on Chip (SoC) \cite{opentitan} \cite{meza2023} \cite{musa2024} as a case study, selected protections are systematically weakened or removed to quantify each mechanism’s contribution and derive practical recommendations for strengthening Hardware Root of Trust (HRoT) designs.
+\textbf{Abstract--} The rapid evolution of high-performance hardware has transformed the semiconductor industry, enabling advances in artificial intelligence (AI) and high-performance computing (HPC). As these systems grow more sophisticated, ensuring chip security is essential to protect the data they process. This thesis evaluates open-source security features in RISC-V-based systems using adversarial testing, focusing on memory protection mechanisms such as Physical Memory Protection (PMP) and enhanced PMP (ePMP) within the context of Secure Boot. Using OpenTitan's Earlgrey System on Chip (SoC) \cite{opentitan} \cite{meza2023} \cite{musa2024} as a case study, selected protections are systematically weakened or removed to quantify each mechanism's contribution and derive practical recommendations for strengthening Hardware Root of Trust (HRoT) designs.
 \\
 \\
-
 \textbf{Keywords-- } High Performance Computing (HPC), RISC-V platforms, artificial intelligence (AI), System on Chip (SoC), Hardware Root of Trust (HRoT), Physical Memory Protection (PMP)
 \\
 }
@@ -125,20 +124,20 @@ RISC-V: Anàlisi i Avaluació de Mecanismes de Seguretat Oberts}
 
 The open RISC-V instruction set architecture (ISA) \cite{isa} accelerates this shift by enabling community-driven security extensions and cryptographic instructions that, together with dedicated accelerators and on-chip hardware roots of trust (HRoT), provide robust security with low overhead, safeguarding data and code integrity for end users.
 
-In this thesis, we focus on the HRoT model in RISC-V systems, using OpenTitan as the primary case study \cite{opentitan}. Our analysis centers on the mechanisms that underpin a secure boot chain, particularly Physical Memory Protection (PMP) \cite{pmp}\cite{pmp1} and its enhanced variant ePMP \cite{epmp}, both of which enforce memory access controls from the earliest boot stages. By evaluating how these mechanisms contribute to overall system security, we aim to derive insights and recommendations for designing effective HRoT implementations in RISC-V SoCs.
+In this thesis, we focus on the HRoT model in RISC-V systems, using OpenTitan as the primary case study \cite{opentitan}. Our analysis centers on the mechanisms that underpin a secure boot chain, particularly Physical Memory Protection (PMP) \cite{pmp} and its enhanced variant ePMP \cite{epmp}, both of which enforce memory access controls from the earliest boot stages. By evaluating how these mechanisms contribute to overall system security, we aim to derive insights and recommendations for designing effective HRoT implementations in RISC-V SoCs.
 
-HRoT functionality is typically integrated within a System-on-Chip (SoC) and may include a dedicated core alongside hardened peripherals and memories to minimize the attack surface and resist software-based compromise. In this context, a clear separation of roles across boot stages, each with narrowly scoped privileges, enables more robust and reliable protection.  In the remainder of this thesis we experimentally stress-test these mechanisms on OpenTitan’s Earlgrey SoC to assess their effectiveness against realistic adversaries and identify potential weaknesses or misconfigurations.
+HRoT functionality is typically integrated within a System-on-Chip (SoC) and may include a dedicated core alongside hardened peripherals and memories to minimize the attack surface and resist software-based compromise. In this context, a clear separation of roles across boot stages, each with narrowly scoped privileges, enables more robust and reliable protection.  In the remainder of this thesis we experimentally stress-test these mechanisms on OpenTitan's Earlgrey SoC to assess their effectiveness against realistic adversaries and identify potential weaknesses or misconfigurations.
 
 At the same time, advanced RISC-V designs use a general-purpose management core to orchestrate secure boot, power management, and low-level control for larger compute subsystems such as AI accelerators. These management cores often implement only the base PMP extension rather than ePMP. Understanding how security properties change when enhanced features such as machine-mode whitelisting (MMWP) are absent is therefore relevant beyond OpenTitan itself, in particular for heterogeneous SoCs where a relatively simple control core is expected to establish a strong hardware root of trust for more complex accelerators.
 
 
 
 \section{Objectives}
-The main objective of this thesis is to analyze and empirically prove the level of security of the open-source Earlgrey SoC from OpenTitan. In particular, the contribution of certain security mechanisms will be examined, such as enhanced Physical Memory Protection (ePMP) \cite{epmp}, in relation to the Secure Boot process, to verify how each function contributes to the overall security of the system.
+The primary objective of this thesis is to analyze and empirically evaluate the memory protection mechanisms underpinning the Hardware Root of Trust in the open-source Earlgrey SoC. Using OpenTitan as a representative case study, we aim to determine the specific security contributions of the Enhanced Physical Memory Protection (ePMP) \cite{epmp} extension within the context of a Secure Boot process.
 
-To stress-test these mechanisms, we will use ablation tests. This involves intentionally modifying or removing specific security policies or functions in order to assess how vulnerable the SoC becomes to certain attack vectors. The main ablation test secenario to be included in this thesis is the removal of enhanced features of PMP, such as machine-mode whitelisting (MMWP) or rule locking bypass (RLB), to evaluate how the system behaves when only the base PMP is available. 
+To achieve this, we employ an adversarial testing methodology based on ablation. This involves intentionally modifying or removing specific security policies, such as the Machine-Mode Whitelist Policy (MMWP) and Rule Locking Bypass (RLB), to isolate the protection gaps that emerge when these mechanisms are absent. By comparing the system's behavior under a standard ePMP configuration against a degraded baseline implementing only standard PMP, we aim to quantify the impact of these enhanced features on preventing specific attack vectors like boot-time control flow glitches. Ultimately, this analysis seeks to determine whether standard PMP is sufficient for general-purpose management cores in heterogeneous SoCs or if the enhanced features of ePMP are a mandatory requirement for establishing a robust Root of Trust.
 
-This allows us to characterise which guarantees depend critically on ePMP-specific features and which can be approximated on platforms where a general-purpose control core, responsible for secure boot and power management of larger RISC-V subsystems, implements only base PMP. In doing so, we can identify which measures are most critical for protecting the system and establish a hierarchy of defenses based on their actual effectiveness.
+This allows us to characterize which security guarantees depend critically on ePMP-specific features and which can be approximated on platforms where a general-purpose control core, responsible for secure boot and power management of larger RISC-V subsystems, implements only base PMP. In doing so, we identify the critical measures required for system protection and establish a hierarchy of defenses based on their verified effectiveness.
 
 \section{Project Management Methodology and Planning}
 The project has been organized according to the Scrum methodology. The duration of tasks are planned in two-week iterative cycles, called sprints. Each task is expected to be  completed within a sprint or, when necessary, decomposed into smaller sub-tasks to fit the two-week cycle. In addition, daily standup meetings are held with Openchip's "Security Features" team to share progress and issues, while Sprint Reviews are conducted to evaluate results, and retrospectives identify opportunities for improvement.
@@ -154,9 +153,9 @@ As mentioned earlier, each task has been structured to fit biweekly cadence, alt
 \section{State of the art}
 
 \subsection{The OpenTitan Project}
-The experimental framework of this project relies on OpenTitan \cite{opentitan}, the first open-source silicon Root of Trust (RoT) to reach the commercial market. It is a community-driven initiative supported by a several organizations, including lowRISC \cite{lowrisc}, ETH Zurich \cite{ethzurich}, Nuvoton \cite{nuovoton}, Google \cite{google}, Seagate \cite{seagate}, and Western Digital \cite{westerndigital}. Within this ecosystem, lowRISC actively maintains the Ibex processor core, while Nuvoton has successfully taken the System-on-Chip (SoC) to its first tape-out (physical production), with the objective of integrating it as the HRoT in upcoming Google Chromebooks \cite{chromebook}.
+The experimental framework of this project relies on OpenTitan \cite{opentitan}, the first open-source silicon Root of Trust (RoT) to reach the commercial market. It is a community-driven initiative supported by a several organizations, including lowRISC \cite{lowrisc}, ETH Zurich, Nuvoton \cite{nuovoton}, Google \cite{google}, Seagate, Western Digital, and others. Within this ecosystem, lowRISC actively maintains the Ibex processor core, while Nuvoton has successfully taken the SoC to its first tape-out (physical production), with the objective of integrating it as the HRoT in upcoming Google Chromebooks \cite{chromebook}.
 
-The development of such hardware is would not have been possible without the  RISC-V architecture \cite{isa}. Its open and modular design has enabled the community to experiment with, extend, and validate new security functionalities, laying the necessary groundwork for ambitious projects like OpenTitan.
+The development of such hardware would not have been possible without the  RISC-V architecture \cite{isa}. Its open and modular design has enabled the community to experiment with, extend, and validate new security functionalities, laying the necessary groundwork for ambitious projects like OpenTitan.
 
 \subsection{The Paradigm of Open-Source Security}
 The shift toward truly open-source hardware represents a significant milestone in semiconductor security. Unlike proprietary "black box" designs, open hardware allows every component of the Register Transfer Level (RTL) code design to be publicly audited, verified, and improved. This transparency is crucial for reducing the risk of hidden vulnerabilities and mitigating the threat of hardware Trojans \cite{trojan}, which are malicious modifications hidden within circuits, such as backdoors.
@@ -165,7 +164,7 @@ In a landscape where attacks are increasingly sophisticated and the technologica
 
 
 \subsection{The Earlgrey SoC}
-The primary target of our analysis is OpenTitan’s Earlgrey SoC. Apart from containing a low-power 32-bit RISC-V core (Ibex) equipped with distinct security features, the SoC integrates a suite of specialized security blocks. These include:
+The primary target of our analysis is OpenTitan's Earlgrey SoC. Apart from containing a low-power 32-bit RISC-V core (Ibex) equipped with distinct security features, the SoC integrates a suite of specialized security blocks. These include:
 \begin{itemize}
     \item \textbf{Cryptographic Engines:} Dedicated hardware for AES, HMAC, KMAC, and OTBN (OpenTitan Big Number accelerator for public-key cryptography).
     \item \textbf{Entropy Source:} A physical true random number generator (TRNG) for key generation.
@@ -178,15 +177,14 @@ Together with carefully partitioned non-volatile memory and peripheral isolation
 \section{Threat Model}
 We assume an adversary with physical but non-invasive access to the device, such as a device owner, service provider, or unauthorised third party. The attacker can either read or modify firmware images stored in non-volatile memory, or apply non-invasive fault mechanisms, for example, clock or voltage glitches during early boot. 
 
-The attacker’s primary goal is to bypass secure boot, for instance by executing unsigned or tampered firmware, or by redirecting control flow to unverified code. We also consider code-reuse attacks, such as Return-Oriented Programming (ROP), where an adversary exploits overly permissive memory configurations (eg., executable data sections) to construct malicious payloads from existing valid instructions. Invasive hardware attacks that require decapsulating the chip or probing internal wires are out of scope. This simplified model is aligned with the OpenTitan Lightweight Threat Model~\cite{threat}, but concentrates on non-invasive attacks against the secure-boot chain. 
+The adversary's primary objective is to skip the secure boot process by manipulating the execution path to bypass signature verification \cite{crypto}, thereby enabling the execution of arbitrary, unsigned firmware. We also consider code-reuse attacks, such as Return-Oriented Programming (ROP), where an adversary exploits overly permissive memory configurations (e.g., executable data sections) to construct malicious payloads using existing valid instructions. Invasive hardware attacks that require chip decapsulation or probing internal wires are considered out of scope. This simplified model aligns with the OpenTitan Lightweight Threat Model~\cite{threat} but focuses specifically on non-invasive attacks targeting the secure boot chain. 
 
 Gaining the ability to run arbitrary firmware is particularly attractive for an attacker because it effectively disables all higher-level protections implemented above the root of trust and enables persistent, stealthy compromise of the platform. Real-world incidents such as the Stuxnet\cite{stuxnet} malware, which targeted industrial control systems by manipulating low-level code in programmable logic controllers, illustrate how control over early-stage or firmware-level execution can be used to cause long-term, hard-to-detect damage in critical infrastructures.
-
 
 \section{System Under Test: Secure Boot}
 Secure boot is the foundational security mechanism that ensures a device executes only trusted software. In complex RISC-V systems, the processor does not immediately load the operating system upon power-up. Instead, it follows a staged boot process known as a \textbf{Chain of Trust}.
 
-In this model, the system begins by executing a small, immutable piece of code embedded directly in the silicon, known as ROM (Read-Only Memory) which constitutes the Root of Trust. This code authenticates the next stage of firmware using cryptographic signatures before granting it execution privileges. This process is repeated on each stage, verifying the next, until the full operating system is loaded. If any link in this chain is broken (eg., a signature check fails), the boot process halts, preventing the system from running compromised code.
+In this model, the system begins by executing a small, immutable piece of code embedded directly in the silicon, known as Read-Only Memory (ROM), which constitutes the Root of Trust. This code authenticates the next stage of firmware using cryptographic signatures before granting it execution privileges. This process is repeated on each stage, verifying the next, until the full operating system is loaded. If any link in this chain is broken (eg., a signature check fails), the boot process halts, preventing the system from running compromised code.
 
 \subsection{Boot Stages in OpenTitan}
 OpenTitan implements this concept through three primary stages, dividing responsibilities between the manufacturer (\emph{Silicon Creator}) and the user (\emph{Silicon Owner}):
@@ -194,9 +192,9 @@ OpenTitan implements this concept through three primary stages, dividing respons
 \begin{enumerate}
     \item \textbf{ROM (Stage 0):} The immutable Hardware Root of Trust. Embedded directly in silicon, this code cannot be modified post-manufacture. Its primary responsibilities are to establish the initial security defenses (configuring ePMP), perform essential hardware initialization, and cryptographically verify the signature of the next stage (ROM\_EXT) before transferring control.
 
-    \item \textbf{ROM\_EXT (Stage 1):} The "ROM Extension" is stored in mutable eFlash and is managed by the Silicon Creator. It acts as a secure bridge between the immutable ROM and the owner-controlled firmware. This stage initializes complex hardware features not handled by the Mask ROM and authenticates the first stage of the owner's firmware (BL0).
+    \item \textbf{ROM\_EXT (Stage 1):} The "ROM Extension" is stored in mutable eFlash and is managed by the Silicon Creator. It acts as a secure bridge between the immutable ROM and the owner-controlled firmware. This stage initializes complex hardware features not handled by the ROM and authenticates the first stage of the owner's firmware (BL0).
 
-    \item \textbf{BL0 (Stage 2):} The first boot stage signed by the Silicon Owner. This stage marks the transition of control from the manufacturer to the device owner. It performs platform-specific setup, such as configuring the pinmux and clocks, and is responsible for verifying and loading higher-level system software, such as the operating system kernel or a standard bootloader like OpenSBI.
+    \item \textbf{BL0 (Stage 2):} The first boot stage signed by the Silicon Owner. This stage marks the transition of control from the manufacturer to the device owner. It performs platform-specific setup, such as configuring the pinmux and clocks, and is responsible for verifying and loading higher-level system software, such as a standard bootloader like OpenSBI or an operating system kernel.
 \end{enumerate}
 
 Figure~\ref{logical_sec_model} illustrates the secure boot stack, highlighting the critical hardware isolation between the \emph{Silicon Creator} (Machine Mode) and the \emph{Silicon Owner}. As execution ascends, strict boundaries and separation prevent higher-level software from compromising the Root of Trust.
@@ -209,13 +207,13 @@ Figure~\ref{logical_sec_model} illustrates the secure boot stack, highlighting t
 \end{figure}
 
 \subsection{Memory Protection}
-OpenTitan’s 32-bit Ibex RISC-V core implements the enhanced Physical Memory Protection extension (ePMP). We first describe the base RISC-V Physical Memory Protection (PMP) in detail and then explain how ePMP strengthens early boot security and machine mode enforcement on this SoC.
+OpenTitan's 32-bit Ibex RISC-V core implements the enhanced Physical Memory Protection extension (ePMP). We first describe the base RISC-V Physical Memory Protection (PMP) in detail and then explain how ePMP strengthens early boot security and machine mode enforcement on this SoC.
 \subsubsection{PMP}
 To support secure processing and contain software faults, it is essential to restrict the physical addresses that software can access. The Physical Memory Protection (PMP) unit provides per-hart (hardware thread) controls that allow Machine Mode to specify access permissions (Read, Write, Execute) for defined physical memory regions. By configuring these PMP entries, the system enforces fine-grained isolation, determining which areas of the physical address space are accessible to lower-privileged software, thereby improving overall memory safety and robustness.
 
 While the RISC-V standard allows flexibility in implementation, OpenTitan's Ibex core specifically includes 16 PMP entries, enabling the definition of up to sixteen distinct protected regions. The protection standard relies on two types of Control and Status Registers (CSRs):
 
-\paragraph{pmpaddrN} registers store the physical address values that define the boundaries of PMP-protected regions. There is one \texttt{pmpaddr} register for each PMP entry implemented by the core. These registers encode the physical address shifted right by two bits, allowing for a minimum granularity of 4 bytes. Although the RISC-V specification allows for wider physical addresses to support complex memory management, OpenTitan’s Ibex core utilizes a standard 32-bit physical address space, and these registers are implemented to match that width.
+\paragraph{pmpaddrN} registers store the physical address values that define the boundaries of PMP-protected regions. There is one \texttt{pmpaddr} register for each PMP entry implemented by the core. These registers encode the physical address shifted right by two bits, allowing for a minimum granularity of 4 bytes. Although the RISC-V specification allows for wider physical addresses to support complex memory management, OpenTitan's Ibex core utilizes a standard 32-bit physical address space, and these registers are implemented to match that width.
 
 \paragraph{pmpcfgN} Each \texttt{pmpcfg} CSR is four bytes wide and encodes four PMP entries (one byte per entry). 
 
@@ -255,7 +253,7 @@ These are the address-matching modes defined by RISC-V PMP. Each mode trades off
   \item \textbf{OFF (00):} The entry is disabled. However, its address register can still serve as the lower bound for a subsequent TOR entry.
   \item \textbf{TOR (01):} \emph{Top of Range}. Defines a range $[addr_{i-1}, addr_i)$. This mode allows for arbitrary region sizes but typically consumes two PMP entries (one for the start, one for the end).
   \item \textbf{NA4 (10):} \emph{Naturally Aligned 4-byte}. Matches a single 4-byte word at the specified address. Useful for protecting individual registers or flags.
-  \item \textbf{NAPOT (11):} \emph{Naturally Aligned Power of Two}. Defines a region of size $2^{k}$ bytes (where $k \ge 3$). Efficient for fixed-size memory blocks like RAM or Flash partitions, consuming only a single entry.
+  \item \textbf{NAPOT (11):} \emph{Naturally Aligned Power of Two}. Defines a region of size $2^{k}$ bytes (where $k \ge 3$). Efficient for fixed-size memory blocks like RAM or eFlash partitions, consuming only a single entry.
 \end{enumerate}
 
 \paragraph{The \texttt{mcause} CSR} is a Machine-Mode Control and Status Register that records the specific reason for the most recent trap taken into M-mode. A trap can be either an interrupt (asynchronous, like a timer) or an exception (synchronous, like an illegal instruction). In the context of PMP, \texttt{mcause} is the primary diagnostic tool. When an access violates permissions, the hardware raises a specific exception code (e.g., \texttt{kIbexExcInstrAccessFault} for execution violations). The exception handler reads this code to determine the nature of the fault. 
@@ -268,10 +266,10 @@ In the context of PMP and secure boot evaluation, the following Ibex exception c
 
 \begin{enumerate}
 \item \textbf{\texttt{kIbexExcInstrAccessFault} (1)} \
-Raised when an instruction fetch targets an address without execute permission, for example, PMP denies \texttt{X} or otherwise cannot be accessed.
+Raised when an instruction fetch targets an address without execute permission or targets an inaccessible region.
 
 \item \textbf{\texttt{kIbexExcIllegalInstrFault} (2)} \
-Raised when the fetched instruction encoding does not correspond to any valid opcode for the implemented ISA. In this work, it is common to execute from regions prefilled with all ones (e.g., \texttt{0xFFFF...}). If execute permission is denied by PMP, the trap is an \emph{instruction access fault}, if execution is permitted, the all-ones word decodes to an invalid instruction, raising this fault instead.
+Raised when the fetched instruction encoding does not correspond to any valid opcode for the implemented ISA (e.g., \texttt{0xFFFFFFFF}). 
 
 \item \textbf{\texttt{kIbexExcLoadAccessFault} (5)} \
 Raised when a load violates access policy, for example, PMP denies \texttt{R} or targets an inaccessible region.
@@ -284,12 +282,16 @@ Raised when a store/AMO violates access policy, for example, PMP denies \texttt{
 
 
 \subsubsection{ePMP}
-Standard PMP suffers from a "default-allow" posture in Machine Mode: unless an entry is explicitly locked, M-mode ignores the protection rules. Furthermore, unmatched addresses are often accessible, creating dangerous gaps during the complex initialization of early boot.
+Standard PMP suffers from two critical architectural limitations when acting as a Root of Trust in Machine Mode. 
+
+First, it enforces a \textbf{"default-allow"} posture: any physical address not explicitly covered by a PMP entry remains fully accessible to M-Mode. This creates a "blacklist" model where security relies on covering every possible address, where any gap in configuration leaves the system vulnerable.
+
+Second, for a PMP entry to apply to M-Mode, it must be \textbf{Locked} (\texttt{L}=1). However, standard PMP dictates that locked entries are immutable until a system reset. This rigidity prevents the firmware from implementing a dynamic boot flow - such as loading code, verifying it, and then locking it down - without resetting the entire system.
 
 The Enhanced PMP (ePMP) extension (standardized as Smepmp~\cite{epmp}) addresses these vulnerabilities by introducing the \texttt{mseccfg} CSR. This register allows the system to enforce a strict "whitelist-by-default" policy and provides mechanisms to safely update locked rules, ensuring robust protection from the very first instruction.
 
 \paragraph{The \texttt{mseccfg} CSR}
-The \texttt{mseccfg} (Machine Security Configuration) register is the control center for these new policies. Accessible only in M-mode, it defines bits that alter PMP’s default behavior while maintaining backward compatibility with base PMP when cleared. On Ibex/OpenTitan, only a specific subset of these bits is used:
+The \texttt{mseccfg} (Machine Security Configuration) register is the control center for these new policies. Accessible only in M-mode, it defines bits that alter PMP's default behavior while maintaining backward compatibility with base PMP when cleared. On Ibex/OpenTitan, only a specific subset of these bits is used:
 
 \paragraph{Rule Locking Bypass (\texttt{mseccfg.RLB})}
 This bit provides a controlled, temporary override of the locked state so that boot code can safely evolve PMP after first constraining M-mode:
@@ -307,7 +309,7 @@ This bit changes the default outcome for M-mode when no PMP entry matches the ta
 In practice, platforms enable \texttt{MMWP} early (or wire it high via RTL) to avoid reintroducing default-allow windows during the boot chain.
 
 \paragraph{Machine-Mode Lockdown (\texttt{mseccfg.MML})}
-This bit reinterprets the PMP lock mechanism to separate enforcement between Machine Mode and lower privilege levels (User or Supervisor modes). As OpenTitan’s standard boot flow does not utilize this feature, it is excluded from our experimental scope.
+This bit reinterprets the PMP lock mechanism to enforce strict isolation between Machine, Supervisor, and User modes. This is particularly critical for systems lacking an MMU (Virtual Memory), as it establishes clear boundaries between firmware, kernel, and applications. However, OpenTitan excludes this feature from its boot flow because it operates primarily in Machine Mode (with optional User Mode), lacking the Supervisor Mode layer that necessitates such separation.
 
 \paragraph{Relevance to Secure Boot}
 During the ROM and ROM\_EXT stages, strict adherence to the Principle of Least Privilege is required: only the minimal verified code region should be executable. \texttt{MMWP} enforces this by eliminating default-allow gaps, while \texttt{RLB} provides a mechanism to lock protections early yet safely evolve the memory layout once the next stage is authenticated. This combination yields a significantly more robust secure-boot posture than base PMP alone, while maintaining backward compatibility for our ablation experiments.
@@ -316,7 +318,7 @@ During the ROM and ROM\_EXT stages, strict adherence to the Principle of Least P
 This section analyzes the transition of OpenTitan's ePMP configuration from a minimal reset state to a fully-fledged runtime policy.
 
 \paragraph{Hardwired Configuration}
-At reset, Ibex loads a minimal configuration from RTL constants, covering only essential regions (ROM, MMIO, Debug) while leaving the rest \textit{OFF}. Crucially, \texttt{mseccfg} resets to \texttt{RLB=1} and \texttt{MMWP=1}. This ensures that unmatched addresses are denied by default—closing potential gaps, while allowing the ROM to safely refine locked entries during the boot sequence.
+At reset, Ibex loads a minimal configuration from RTL constants, covering only essential regions (ROM, MMIO, Debug) while leaving the rest \textit{OFF}. Crucially, \texttt{mseccfg} resets to \texttt{RLB=1} and \texttt{MMWP=1}. This ensures that unmatched addresses are denied by default, thereby closing potential gaps, while allowing the ROM to safely refine locked entries during the boot sequence.
 
 \paragraph{Firmware Initialization}
 Immediately following reset, the processor begins execution at the assembly entry point \texttt{rom\_start.S}. This startup code performs minimal initialization before invoking the assembly function \texttt{rom\_epmp\_init}. Prior to this function's execution, critical resources such as eFlash and SRAM are not yet mapped by any PMP entry although they remain inaccessible due to the default-deny policy enforced by \texttt{MMWP}=1. The initialization routine then establishes the runtime memory layout summarized in Table~\ref{tab:epmp-rom}. Key regions include \textbf{ROM TEXT} (RX), \textbf{ROM} data (R), and \textbf{MMIO} (RW). Notably, the \textbf{eFlash} is mapped as Read-Only to allow signature verification, but remains non-executable to prevent premature code execution.
@@ -350,7 +352,7 @@ Immediately following reset, the processor begins execution at the assembly entr
 \noindent
 
 \paragraph{Enabling ROM\_EXT Execution}
-Upon successful signature validation, the ROM updates the ePMP configuration to grant execution permissions to the ROM\_EXT text section. This update, performed by \texttt{rom\_epmp\_unlock\_rom\_ext\_rx}, leverages the PMP priority mechanism rather than modifying locked entries. It programs a new PMP rule at a lower index (higher priority) than the generic eFlash entry. This new rule specifically targets the ROM\_EXT \texttt{.text} (instructions) range with \texttt{RX} permissions, effectively overriding the broader read-only restriction for that section. This staged approach ensures that the flash memory remains non-executable until cryptographic verification is complete, maintaining a strict security posture.
+Upon successful signature validation, the ROM grants execution permissions to the ROM\_EXT \texttt{.text} section, where code instructions are stored. This update leverages the PMP priority mechanism: a new rule is programmed at a higher priority index to specifically override the generic read-only eFlash entry with \texttt{RX} permissions. This ensures that code execution is only permitted after cryptographic verification is complete.
 
 \section{Experimental Methodology}
 
@@ -358,10 +360,11 @@ The experimental testing is conducted using Verilator, a cycle-accurate simulato
 
 \subsection{Test environment}
 
-The OpenTitan development ecosystem provides a toolchain organized by \textbf{Bazel} to build both the hardware simulation and the firmware images. \textbf{FuseSoC} manages the RTL dependencies, which are translated by \textbf{Verilator} into a cycle-accurate C++ executable (\texttt{Vchip\_sim\_tb}). Finally, \textbf{Opentitantool} interfaces with this binary to load firmware images (ROM, Flash, OTP) and capture UART output during execution.
-
+The OpenTitan development ecosystem provides a toolchain organized by \textbf{Bazel} to build both the hardware simulation and the firmware images. \textbf{FuseSoC} manages the RTL dependencies, which are translated by \textbf{Verilator} into a cycle-accurate C++ executable (\texttt{Vchip\_sim\_tb}). Finally, \textbf{Opentitantool} interfaces with this binary to load firmware images (ROM, eFlash, OTP) and capture UART output during execution.
 
 It is important to note that while Verilator is faster than traditional logic simulators, the cycle-accurate nature of the emulation still imposes significant computational overhead. Consequently, complex test sequences - particularly those involving cryptographic operations or extended boot flows - resulted in high simulation times, with some individual tests requiring upwards of fifteen minutes to complete in an 8-core Intel Xeon Gold 6130 CPU at 2.10GHz. 
+
+It is important to note that while Verilator is faster than traditional logic simulators, the cycle-accurate nature of the emulation still imposes significant computational overhead. Consequently, comprehensive test sequences resulted in high simulation times, with some individual tests requiring upwards of fifteen minutes to complete on an 8-core Intel Xeon Gold 6130 CPU at 2.10GHz. These latencies were primarily driven by the exhaustive verification of memory region boundaries and at the same time extensive UART logging required to trace PMP register configurations and identify exception causes.
 
 Regarding the experimental methodology, we utilize two distinct instances of this simulation environment. The first instance serves as the baseline, running the unmodified SoC design to establish expected behavior. The second instance is used for experimental ablation, where specific security policies are removed, relaxed, or altered to quantify their impact on the system's overall security posture.
 
@@ -370,9 +373,9 @@ An emulation approach using Field-Programmable Gate Arrays (FPGAs) was initially
 \subsection{Experimental Design And Implementation}
 To systematically verify memory protections, we cannot simply rely on standard software assertions, as a security violation triggers a hardware trap (exception) rather than a return code. OpenTitan addresses this with a baseline test, \texttt{rom\_epmp\_test.c}, which probes specific memory locations and compares the resulting exception with an expected value. However, this test is limited in scope, as it is constrained primarily to execute-only accesses and does not cover the full range of memory kinds and access types required for a complete security verification.
 
-To overcome these limitations, we developed a custom test suite that operates as a direct replacement for the standard Mask ROM firmware. By linking against the ROM linker script and utilizing the standard reset vector, our test executes in Machine Mode (M-Mode) immediately following system reset. This privileged context is essential for verifying the initial ePMP configuration and the locking mechanisms. Instead of proceeding with the standard boot flow -which would attempt to verify and jump to the ROM\_EXT in Flash- this test changes the control flow to execute our verification routines directly from the ROM text region.
+To overcome these limitations, we developed a custom test suite that operates as a direct replacement for the standard ROM firmware. By linking against the ROM linker script and utilizing the standard reset vector, our test executes in Machine Mode (M-Mode) immediately following system reset. This privileged context is essential for verifying the initial ePMP configuration and the locking mechanisms. Instead of proceeding with the standard boot flow -which would attempt to verify and jump to the ROM\_EXT in eFlash- this test changes the control flow to execute our verification routines directly from the ROM text region.
 
-Furthermore, for these experiments, the eFlash memory is left in its erased state (filled with \texttt{0xFFFFFFFF}). This provides a predictable target for testing invalid instruction execution, as such value is not a valid RISC-V instruction. Crucially, this also acts as a \textbf{fail-safe}: if a security gap were to erroneously permit execution in this region, the processor would immediately trap on the first instruction fetch rather than continuing to execute potentially undefined memory regions, ensuring that any failure is contained and observable. Finally, from a simulation perspective, this strategy reduces computational overhead by treating the flash as a constant value that the simulator can serve efficiently, therefore avoiding latency associated with loading large binary images or modeling complex memory content. 
+Furthermore, for these experiments, the eFlash memory is left in its erased state (filled with \texttt{0xFFFFFFFF}). This configuration serves primarily as a deterministic \textbf{fail-safe}. Since this value corresponds to an illegal RISC-V instruction, any unintended execution resulting from a security gap where PMP fails to block the access, will immediately trigger an illegal instruction trap. This ensures that if the primary access control layer fails, the processor halts execution rather than running undefined code. Finally, from a simulation perspective, this strategy reduces computational overhead by treating the eFlash as a constant value that the simulator can serve efficiently, avoiding the latency associated with loading large binary images.
 
 \subsubsection{Custom Test Suite}
 
@@ -440,17 +443,15 @@ Based on the described methodology, we defined a set of experiments to character
 
 First, we validate the permissions for regions explicitly covered by ePMP entries (Table~\ref{tab:epmp-rom}). The test issues \emph{execute}, \emph{load}, and \emph{store} probes to both interior addresses and boundary words of each region. 
 
-To pass this verification, the hardware must strictly enforce the defined permissions. For example, the \textbf{FLASH} region is configured as Read-Only, therefore, the test expects load operations to succeed, while store and execute attempts must trigger \texttt{kIbexExcStoreAccessFault} and \texttt{kIbexExcInstrAccessFault}, respectively. Any deviation from this behavior is flagged as a security violation.
+To pass this verification, the hardware must strictly enforce the defined permissions. For example, the \textbf{eFlash} region is configured as Read-Only, therefore, the test expects load operations to succeed, while store and execute attempts must trigger \texttt{kIbexExcStoreAccessFault} and \texttt{kIbexExcInstrAccessFault}, respectively. Any deviation from this behavior is flagged as a security violation.
 
 \paragraph{Default-deny for unconfigured regions (\texttt{MMWP}=1)}
 
-Subsequently, we probed addresses falling outside any configured ePMP entry. To rigorously test the whitelist policy, we generated a build variant where the eFlash PMP rule was omitted, effectively leaving the entire flash storage unmapped.
+Subsequently, we probed addresses falling outside any configured ePMP entry. To rigorously test the whitelist policy, we generated a build variant where the eFlash PMP rule was omitted, effectively leaving the entire eFlash storage unmapped.
 
 The objective is to verify that with \texttt{MMWP}=1, the system behaves as a true whitelist. The test is considered successful only if instruction fetches, loads, and stores to this unmapped area consistently trigger access faults, thereby confirming that no "catch-all" deny rule is required to block undefined memory.
 
-[Annex eFLASH unconfigured]
-
-Figure~\ref{fig:epmp_logic} illustrates the logical flow of this verification process. The diagram presents a high-level abstraction using Flash memory accesses as a representative example, depicting a generic unconfigured region adjacent to the Flash to visualize the default-deny behavior. It is important to note that in the experimental implementation, this scenario was validated by explicitly omitting the eFlash PMP configuration. This effectively rendered the entire Flash window unconfigured, allowing us to confirm that the hardware enforces the whitelist policy (\texttt{MMWP}=1) and blocks access in the absence of a matching rule.
+Figure~\ref{fig:epmp_logic} illustrates the logical flow of this verification process. The diagram presents a high-level abstraction using eFlash memory accesses as a representative example, depicting a generic unconfigured region adjacent to the eFlash to visualize the default-deny behavior. It is important to note that in the experimental implementation, this scenario was validated by explicitly omitting the eFlash PMP configuration. This effectively rendered the entire eFlash window unconfigured, allowing us to confirm that the hardware enforces the whitelist policy (\texttt{MMWP}=1) and blocks access in the absence of a matching rule.
 
 \begin{figure}[ht]
     \centering
@@ -470,8 +471,6 @@ Lastly, the Rule-Locking Bypass test verifies that the \texttt{mseccfg.RLB} bit 
 
 \subsection{Ablation study: Disabling ePMP}
 
-(show how ePMP was removed)
-
 To quantify the specific security benefits of ePMP, we established a baseline that mimics standard PMP semantics (absence of enhanced features). We achieved this by modifying the hardware configuration at the RTL level to hardwire the reset values of the \texttt{mseccfg} register to zero. This effectively disables the Machine-Mode Whitelist Policy (MMWP) and Rule Locking Bypass (RLB).
 
 We then executed the exact same verification suite described in Section 7.2.2 on this degraded target. By comparing the exception responses of the standard OpenTitan configuration against this PMP-only baseline, we isolate the guarantees provided by the extension. We focus on two key behaviors:
@@ -486,10 +485,12 @@ We then executed the exact same verification suite described in Section 7.2.2 on
 \subsection{Baseline Security Verification (ePMP Enabled)}
 The verification strategy defined in Section 7.2.2 was first executed against the standard OpenTitan configuration.
 \begin{itemize}
-    \item \textbf{Configured Regions:} All regions behaved as expected. The Flash region correctly rejected execution attempts with \texttt{kIbexExcInstrAccessFault}.
-    \item \textbf{Whitelist Policy:} The unmapped Flash test confirmed the \texttt{MMWP=1} policy, where all accesses were blocked by hardware.
+    \item \textbf{Configured Regions:} All regions behaved as expected. The eFlash region correctly rejected execution attempts with \texttt{kIbexExcInstrAccessFault}.
+    \item \textbf{Whitelist Policy:} The unmapped eFlash test confirmed the \texttt{MMWP=1} policy, where all accesses were blocked by hardware.
     \item \textbf{Handover:} The ROM\_EXT transition test confirmed that code execution is impossible until the explicit unlock occurs.
+    \item \textbf{Rule Locking Bypass:} The RLB mechanism functioned as specified, successfully modifying locked PMP entries while \texttt{RLB=1}, and when off (i.e. \texttt{RLB=0}) the entries were rendered immutable, rejecting further modification attempts.
 \end{itemize}
+
 
 \subsection{Impact of ePMP Removal (Ablation Study)}
 When running the verification suite on the ablation target (base PMP only), two critical security regressions were observed.
@@ -498,6 +499,10 @@ When running the verification suite on the ablation target (base PMP only), two 
 With \texttt{MMWP} hardwired to 0, our probes to unconfigured memory regions (specifically the unmapped eFlash) completed without raising exceptions. This confirms that without ePMP, the system defaults to a "blacklist" approach, where any memory not explicitly covered by a PMP entry remains accessible to Machine Mode.
 
 As illustrated in Figure~\ref{fig:pmp_logic}, under this configuration, accesses to the unconfigured area bypass the protection logic and complete successfully, standing in clear contrast to the default-deny behavior observed when \texttt{MMWP} is enabled.
+
+With \texttt{MMWP} hardwired to 0, our probes to unconfigured memory regions (specifically the unmapped eFlash) resulted in \texttt{kIbexExcIllegalInstrFault} rather than the expected \texttt{kIbexExcInstrAccessFault}. This distinction is critical: the absence of an access fault confirms that the PMP hardware permitted the fetch to proceed (default-allow). The subsequent illegal instruction trap occurred only because the fetched data (\texttt{0xFFFFFFFF}) is not a valid opcode, proving that the memory protection layer failed to block access to the unconfigured region.
+
+As illustrated in Figure~\ref{fig:pmp_logic}, under this configuration, accesses to the unconfigured area bypass the protection logic and reach the execution stage, standing in clear contrast to the default-deny behavior observed when \texttt{MMWP} is enabled.
 
 \begin{figure}[ht]
     \centering
@@ -512,7 +517,7 @@ During the execution of the ablation test suite, a critical anomaly was detected
 
 Initially suspected to be a software bug in the test suite, further investigation revealed that this behavior was a direct architectural consequence of disabling ePMP. At reset, the hardware loads a default PMP entry covering the entire ROM address space with Locked, Read, and Execute (L/R/X) permissions.
 
-This permissive default is architecturally necessary for two reasons. First, the processor must be able to fetch the reset vector immediately upon power-on, otherwise, an instruction access fault would occur before the first instruction is executed. Second, while the hardware knows the physical size of the ROM, it is agnostic to the software layout. The boundary between executable code (\texttt{.text}) and constant data (\texttt{.data, .rodata} among others), is determined at compile time. Consequently, the RTL cannot enforce a granular restriction without risking compatibility with future firmware builds, forcing it to map the entire ROM size as executable.
+This permissive default is architecturally necessary for two reasons. First, the processor must be able to fetch the reset vector immediately upon power-on, otherwise, an access fault would occur before the first instruction is executed. Second, while the hardware knows the physical size of the ROM, it is agnostic to the software layout. The boundary between executable code (\texttt{.text}) and constant data (\texttt{.data, .rodata} among others), is determined at compile time. Consequently, the RTL cannot enforce a granular restriction without risking compatibility with future firmware builds, forcing it to map the entire ROM size as executable.
 
 In the standard boot flow, the \texttt{rom\_epmp\_init} function resolves this by reading the firmware's linker symbols to identify the exact code boundary. It then attempts to remove the execute permission from the original wide entry and add a new, granular rule granting execution only to the \texttt{.text} section.
 
@@ -521,9 +526,9 @@ However, with \texttt{RLB} forced to 0 in our ablation study, the initial "wide"
 \subsection{Identified Attack Vector: The Initialization Gap}
 The results from the ablation study reveal a critical attack vector that emerges during the early boot phase. Specifically, a significant window of vulnerability exists between the hardware reset and the completion of the \texttt{rom\_epmp\_init} function, which is responsible for configuring the full PMP layout.
 
-During this interval, the system relies on the minimal PMP configuration hardwired at reset, which leaves large portions of the memory map - including the eFlash - unconfigured. As demonstrated in our previous testing, when \texttt{MMWP}=0 base PMP semantics apply, therefore, Machine Mode is permitted to execute from any address not explicitly covered by a PMP entry. This creates a substantial risk: an attacker could induce a control-flow glitch (eg., via voltage fault injection, as outlined in our Threat Model) to redirect the Program Counter (PC) to the unmapped eFlash region before initialization completes, the processor will successfully execute the code found there, even if it is malicious. This effectively bypasses the entire Secure Boot chain, allowing the execution of arbitrary, unverified payloads before the Root of Trust has established its defenses.
+During this interval, the system relies on the minimal PMP configuration hardwired at reset, which leaves large portions of the memory map - including the eFlash - unconfigured. As demonstrated in our previous testing, when \texttt{MMWP}=0 base PMP semantics apply, therefore, Machine Mode is permitted to execute from any address not explicitly covered by a PMP entry. This creates a substantial risk: an attacker could induce a control-flow glitch (eg., via voltage fault injection, as outlined in our Threat Model) to redirect the Program Counter (PC) to the unmapped eFlash region before initialization completes, the processor will successfully execute the code found there, even if it is malicious. This could effectively bypass the entire Secure Boot chain, allowing the execution of arbitrary, unverified payloads before the Root of Trust has established its defenses.
 \section{Conclusion}
-This thesis analyzed and evaluated the security mechanisms of open-source RISC-V Hardware Roots of Trust, using OpenTitan’s Earlgrey SoC as a case study. Through a rigorous experimental methodology utilizing cycle-accurate simulation and adversarial testing, we quantified the specific security contributions of the Enhanced Physical Memory Protection (ePMP) extension.
+This thesis analyzed and evaluated the security mechanisms of open-source RISC-V Hardware Roots of Trust, using OpenTitan's Earlgrey SoC as a case study. Through a rigorous experimental methodology utilizing cycle-accurate simulation and adversarial testing, we quantified the specific security contributions of the Enhanced Physical Memory Protection (ePMP) extension.
 
 The results conclusively demonstrate that the standard RISC-V PMP extension, while sufficient for basic isolation in mature operating systems, lacks the necessary primitives to secure the earliest stages of the boot chain, specially if modularity and hardware reusability is a requirement. Our experiments revealed that disabling ePMP features exposes the system to two critical attack vectors:
 
@@ -532,7 +537,7 @@ The results conclusively demonstrate that the standard RISC-V PMP extension, whi
     \item \textbf{Persistent Over-Privilege:} The absence of the Rule Locking Bypass (\texttt{RLB}) prevents the firmware from adhering to the Principle of Least Privilege. Because the hardware must be permissive at reset to allow booting, the inability to later lock down these permissions results in read-only data sections remaining executable throughout the device's runtime.
 \end{enumerate}
 
-These findings highlight a fundamental tension between system initialization and runtime security: a system must be open to boot, but closed to be secure. ePMP resolves this by allowing a controlled transition from a "boot-friendly" state to a "security-hardened" state. Conclusively, this work suggests that general-purpose cores implementing only base PMP aren't suited for acting as a Hardware Root of Trust unless supplemented by external hardware logic. For heterogeneous SoCs relying on a management core, the adoption of ePMP should be considered a mandatory requirement.
+Conclusively, while standard PMP remains effective for isolating lower-privilege software such as the OS against the firmware, this work demonstrates that it presents significant architectural limitations when used as the sole mechanism for a Hardware Root of Trust. Specifically, the inability to temporarily bypass locks prevents the firmware from dynamically reducing its own privileges during the boot chain. Therefore, general-purpose cores implementing only base PMP rely on a threat model that assumes implicit trust in the Machine Mode firmware's correctness. For robust, defense-in-depth HRoT designs, the adoption of ePMP or equivalent extensions is highly recommended.
 
 Future work could extend these findings by validating the identified attack vectors on physical FPGA implementations or by exploring the interaction between ePMP and other RISC-V security elements, such as Physical Memory Attribution (PMA) or Control Flow Integrity (CFI). However, the evidence presented here serves as a strong recommendation for system architects, to build a resilient Hardware Root of Trust in RISC-V, memory protection must be whitelist-based and dynamic from the very first clock cycle.
 
@@ -543,6 +548,7 @@ Future work could extend these findings by validating the identified attack vect
 \begin{thebibliography}{11}
 \bibitem{opentitan} 
 \emph{OpenTitan: Open Source Silicon Root of Trust}, Disponible: https://opentitan.org
+
 \bibitem{meza2023}
 A. Meza, C. Tunc, P. Nasahl, and J. Grossklags, 
 “Security Verification of the OpenTitan Hardware Root of Trust,” 
@@ -553,32 +559,18 @@ A. Musa, E. Parisi, L. Barbierato, A. Acquaviva, and F. Barchi,
 “End-to-end Integration of OpenTitan Security Features in a Pure RISC-V SoC,” 
 doi: 10.1109/SMACD61181.2024.10745397.
 
-\bibitem{saha2023}
-S. K. Saha, A. N. Butka, M. K. Ahmed, and C. Bobda, 
-“OpenTitan based Multi-Level Security in FPGA System-on-Chips,” 
-doi: 10.1109/ICFPT59805.2023.00056.
-
-\bibitem{epmp}
-\emph{Secure Memory Protection Extension (PDF)}, 
-Github: riscvarchive/riscv-tee Project. Disponible: \url{https://github.com/riscvarchive/riscv-tee/blob/191b563b08b31cc2974d604a3b670d8666a2e093/Smepmp/Smepmp.pdf} (Accedit: 2025-09-23)
 
 \bibitem{isa}
 \emph{The RISC-V Instruction Set Manual (Unprivileged ISA)}. 
 RISC-V International. Disponible: \url{https://riscv.org/technical/specifications/} (Accedit: 2025-11-15)
 
-\bibitem{hrot}
-\emph{Hardware Root of Trust}. 
-Rambus Blog. Disponible: \url{https://www.rambus.com/blogs/hardware-root-of-trust/} (Accedit: 2025-11-15) \\
-\emph{Keystone: An Open Framework for Architecting Trusted Execution Environments}. 
-EuroSys 2020. Disponible: \url{https://www.shwetashinde.org/publications/keystone_eurosys20.pdf} (Accedit: 2025-11-15)
-
 \bibitem{pmp}
-\emph{RISC-V Memory Protection: Diving deep into the complexities}. 
-Medium (Karthik B K). Disponible: \url{https://medium.com/@talktokarthikbk/risc-v-memory-protection-diving-deep-into-the-complexities-9d751212be6b} (Accedit: 2025-11-15)
+\emph{The RISC-V Instruction Set Manual, Volume II: Privileged Architecture (Including PMP)}. 
+RISC-V International. Disponible: \url{https://github.com/riscv/riscv-isa-manual/releases/download/Priv-v1.12/riscv-privileged-20211203.pdf} (Accedit: 2025-11-15)  
 
-\bibitem{pmp1}
-\emph{The RISC-V Instruction Set Manual, Volume II: Privileged Architecture (inclou PMP)}. 
-RISC-V International. Disponible: \url{https://github.com/riscv/riscv-isa-manual/releases/download/Priv-v1.12/riscv-privileged-20211203.pdf} (Accedit: 2025-11-15)
+\bibitem{epmp}
+\emph{Secure Memory Protection Extension (PDF)}, 
+Github: riscvarchive/riscv-tee Project. Disponible: \url{https://github.com/riscvarchive/riscv-tee/blob/191b563b08b31cc2974d604a3b670d8666a2e093/Smepmp/Smepmp.pdf} (Accedit: 2025-09-23)
 
 \bibitem{crypto}
 \emph{Verified Boot Crypto}. 
@@ -588,9 +580,6 @@ Chromium OS Design Docs. Disponible: \url{https://www.chromium.org/chromium-os/c
 \emph{OpenTitan Partnership Makes History: First Open-Source Silicon to Reach Commercial Availability}. 
 lowRISC News (13 Feb 2024). Disponible: \url{https://lowrisc.org/news/opentitan-commercial-availability/} (Accedit: 2025-10-04)
 
-\bibitem{ethzurich}
-\emph{“A booting computer is as vulnerable as a newborn baby”}. 
-ETH Zürich News (5 Nov 2019). Disponible: \url{https://ethz.ch/en/news-and-events/eth-news/news/2019/11/project-opentitan.html} (Accedit: 2025-11-15)
 
 \bibitem{nuovoton}
 \emph{Nuvoton Develops OpenTitan\textregistered{}-based Security Chip as Commercial Product}. 
@@ -599,14 +588,6 @@ Press Release (30 May 2024). Disponible: \url{https://www.nuvoton.com/news/news/
 \bibitem{google}
 \emph{Fabrication begins for production OpenTitan silicon}. 
 Google Open Source Blog (6 Feb 2025). Disponible: \url{https://opensource.googleblog.com/2025/02/fabrication-begins-for-production-opentitan-silicon.html} (Accedit: 2025-11-15)
-
-\bibitem{seagate}
-\emph{Seagate Designs RISC-V Cores to Power Data Mobility and Trustworthiness}. 
-Seagate Article. Disponible: \url{https://www.seagate.com/stories/articles/seagate-designs-risc-v-cores-to-power-data-mobility-and-trustworthiness-master-pr/} (Accedit: 2025-11-15)
-
-\bibitem{westerndigital}
-\emph{Western Digital Collaborates with lowRISC and Google to Increase Security Transparency in Data-Centric Platforms}. 
-Western Digital Press Release (5 Nov 2019). Disponible: \url{https://www.westerndigital.com/company/newsroom/press-releases/2019/2019-11-05-western-digital-collaborates-with-lowrisc-and-google-to-increase-security-transparency-in-data-centric-platforms} (Accedit: 2025-11-15)
 
 \bibitem{chromebook}
 \emph{OpenTitan production silicon and early integrations}. 
@@ -620,15 +601,12 @@ Sensors (MDPI), vol. 20, no. 18, 5165 (2020). Disponible: \url{https://www.mdpi.
 \emph{OpenTitan Lightweight Threat Model}. 
 Project documentation. Disponible: \url{https://opentitan.org/book/doc/security/threat_model/index.html} (Accedit: 2025-11-15)
 
-\bibitem{sv32}
-\emph{Design Approaches and Architectures of RISC-V SoCs (referència a Sv32)}. 
-RISC-V International Blog. Disponible: \url{https://riscv.org/blog/design-approaches-and-architectures-of-risc-v-socs/} (Accedit: 2025-11-15)
+\bibitem{stuxnet}
+\emph{Stuxnet}. 
+Wikipedia. Disponible: \url{https://en.wikipedia.org/wiki/Stuxnet} (Accedit: 2025-11-15)
 
 \end{thebibliography}
 \appendix
-\section*{Appendix}
 \addcontentsline{toc}{section}{Appendix}
-
-
 \end{document}
 
